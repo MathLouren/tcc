@@ -1,0 +1,13 @@
+# Python 3.11 ou 3.12 recomendado (versão usada no TCC: 3.12)
+fastapi>=0.110
+uvicorn[standard]>=0.29
+httpx>=0.27
+numpy>=1.26
+pypdf>=4.2
+beautifulsoup4>=4.12
+python-dotenv>=1.0
+# Embeddings locais (padrão do TCC: intfloat/multilingual-e5-base). Instala o PyTorch.
+# Se usar EMBEDDING_PROVEDOR=ollama no .env, esta linha pode ser removida.
+sentence-transformers>=3.0
+# Índice vetorial. Se a instalação falhar, remova a linha: o sistema usa busca equivalente em NumPy.
+faiss-cpu>=1.8

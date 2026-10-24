@@ -1,0 +1,62 @@
+{
+  "descricao": "Manifesto da base de conhecimento do Chatbot Institucional UNIVERSO. Cada documento em data/documentos pode ter aqui título, origem, URL, data de atualização e categoria. Esses dados aparecem nas fontes de cada resposta (RF04). Arquivos sem entrada no manifesto também são indexados, usando o nome do arquivo como título.",
+  "documentos": [
+    {
+      "arquivo": "calendario_letivo_2026_2_sao_goncalo.md",
+      "titulo": "Calendário Letivo 2026.2 – Universidade São Gonçalo",
+      "origem": "Sítio institucional (PDF oficial transcrito; original em data/originais)",
+      "url": "https://universo.edu.br/wp-content/uploads/2026/08/2026-2-l-Sao-Goncalo-l-Calendario-Letivo-l-22072026.pdf",
+      "atualizado_em": "2026-07-22",
+      "categoria": "calendario"
+    },
+    {
+      "arquivo": "criterios_de_avaliacao.md",
+      "titulo": "Critérios de Avaliação – UNIVERSO (Regimento Geral)",
+      "origem": "Sítio institucional (PDF oficial transcrito; original em data/originais)",
+      "url": "https://universo-unificado.prod.universo.edu.br/wp-content/uploads/2017/06/Critérios-de-Avaliação-Universo.pdf",
+      "atualizado_em": "2018-01-10",
+      "categoria": "avaliacao"
+    },
+    {
+      "arquivo": "universidade_sao_goncalo.md",
+      "titulo": "Universidade São Gonçalo – página da unidade",
+      "origem": "Sítio institucional (HTML)",
+      "url": "https://universo.edu.br/a-universo/estrutura/sao-goncalo/",
+      "atualizado_em": "2026-10-23",
+      "categoria": "campus"
+    },
+    {
+      "arquivo": "curso_sistemas_informacao.md",
+      "titulo": "Curso de Sistemas de Informação",
+      "origem": "Sítio institucional (HTML)",
+      "url": "https://universo.edu.br/cursos/sistemas-de-informacao/",
+      "atualizado_em": "2026-10-23",
+      "categoria": "curso"
+    },
+    {
+      "arquivo": "canais_e_servicos_ao_aluno.md",
+      "titulo": "Canais de atendimento e serviços ao aluno",
+      "origem": "Sítio institucional (HTML)",
+      "url": "https://universo.edu.br/",
+      "atualizado_em": "2026-10-23",
+      "categoria": "servicos"
+    }
+  ],
+  "pendentes": [
+    {
+      "documento": "Matriz curricular e ementas do curso de Sistemas de Informação",
+      "categoria": "matriz_curricular",
+      "onde_obter": "Coordenação do curso ou página do curso (janelas 'Matriz do Curso' e 'Ementa do Curso')"
+    },
+    {
+      "documento": "Regulamentos de estágio, TCC e atividades complementares",
+      "categoria": "regulamentos",
+      "onde_obter": "Coordenação do curso"
+    },
+    {
+      "documento": "Manual Informativo do Aluno (MIA)",
+      "categoria": "manual",
+      "onde_obter": "https://universo.edu.br/calendarios/mia/"
+    }
+  ]
+}

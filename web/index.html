@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chatbot Institucional UNIVERSO</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <header class="topo">
+      <div class="logo" aria-hidden="true">UNV</div>
+      <div class="titulo">
+        <h1>Chatbot Institucional UNIVERSO</h1>
+        <small>Atendimento ao aluno – Universidade São Gonçalo</small>
+      </div>
+      <span id="status" class="status">Conectando…</span>
+      <button id="nova-conversa" class="btn-secundario" type="button" title="Iniciar nova conversa">Nova conversa</button>
+    </header>
+
+    <main class="conteudo">
+      <section class="chat" aria-live="polite">
+        <div id="mensagens" class="mensagens">
+          <div class="msg bot">
+            <div class="quem">Assistente UNIVERSO</div>
+            <div class="texto">Olá! Sou o assistente virtual da UNIVERSO. Posso responder dúvidas sobre matrícula, calendário acadêmico, avaliações, disciplinas, prazos e serviços do campus São Gonçalo, sempre com base nos documentos oficiais. Como posso ajudar?</div>
+          </div>
+        </div>
+
+        <form id="formulario" class="entrada" autocomplete="off">
+          <label for="pergunta" class="oculto">Digite sua pergunta</label>
+          <input id="pergunta" name="pergunta" type="text" maxlength="1000" placeholder="Digite sua pergunta…" required>
+          <button id="enviar" type="submit">Enviar</button>
+        </form>
+        <p class="nota">As respostas são geradas a partir dos documentos oficiais listados ao lado. Em caso de dúvida, confirme no Espaço do Aluno.</p>
+      </section>
+
+      <aside class="painel">
+        <h2>Sugestões de perguntas</h2>
+        <div class="sugestoes">
+          <button type="button" class="chip">Até quando posso trancar a matrícula?</button>
+          <button type="button" class="chip">Como é calculada a média do semestre?</button>
+          <button type="button" class="chip">Quando são as provas V1 e V2?</button>
+          <button type="button" class="chip">Como faço a segunda chamada de uma prova?</button>
+          <button type="button" class="chip">Qual é o endereço do campus São Gonçalo?</button>
+        </div>
+
+        <h2>Documentos na base</h2>
+        <ul id="documentos" class="lista"><li>Carregando…</li></ul>
+
+        <h2>Canais oficiais</h2>
+        <ul class="lista">
+          <li>Espaço do Aluno (portal)</li>
+          <li>Central 0800 721 0251</li>
+          <li>contato@universo.com.br</li>
+        </ul>
+      </aside>
+    </main>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
