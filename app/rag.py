@@ -5,6 +5,7 @@ import logging
 import re
 import threading
 import time
+import unicodedata
 from collections import OrderedDict, deque
 from dataclasses import dataclass
 from datetime import date
@@ -28,6 +29,13 @@ AVISO_EXTRATIVO = (
 )
 
 _RE_DIVISAO_FRASES = re.compile(r"(?<=[.!?])\s+|\n+")
+
+
+def _pergunta_pede_lista_de_conteudos(texto: str) -> bool:
+    normalizado = unicodedata.normalize("NFKD", texto).encode("ascii", "ignore").decode().lower()
+    pede_lista = re.search(r"\b(quais|liste|lista)\b", normalizado)
+    pede_conteudo = re.search(r"\b(materias?|disciplinas?|conteudos?|topicos?|programa|ementa)\b", normalizado)
+    return bool(pede_lista and pede_conteudo)
 
 
 @dataclass
@@ -71,12 +79,48 @@ class MotorRAG:
     def recuperar(self, consulta: str) -> list[dict]:
         """Busca os top-k blocos e descarta os que ficam abaixo do limiar de similaridade."""
         indice, p = self.indice, self.parametros
-        vetor = self.embedder.embed_consulta(consulta)
-        resultados = indice.buscar(vetor, p.top_k)
-        return [
+        consultas = [consulta]
+        busca_lista = _pergunta_pede_lista_de_conteudos(consulta)
+        if busca_lista:
+            consultas.append(f"{consulta} programa da disciplina conteúdos tópicos")
+
+        resultados_por_id: dict[int, float] = {}
+        limite_busca = max(p.top_k, p.top_k * 2) if busca_lista else p.top_k
+        for texto_busca in consultas:
+            vetor = self.embedder.embed_consulta(texto_busca)
+            for posicao, similaridade in indice.buscar(vetor, limite_busca):
+                resultados_por_id[posicao] = max(resultados_por_id.get(posicao, -1.0), similaridade)
+
+        trechos = [
             dict(indice.blocos[i], similaridade=round(s, 4))
-            for i, s in resultados
+            for i, s in sorted(resultados_por_id.items(), key=lambda item: -item[1])
             if s >= p.limiar
+        ]
+        if not busca_lista:
+            return trechos
+
+        grupos: dict[tuple[str, str], list[dict]] = {}
+        for bloco in indice.blocos:
+            secao = str(bloco.get("secao", ""))
+            secao_normalizada = unicodedata.normalize("NFKD", secao).encode("ascii", "ignore").decode().lower()
+            if "programa" not in secao_normalizada and "ementa" not in secao_normalizada:
+                continue
+            chave = (str(bloco.get("arquivo", "")), secao)
+            grupos.setdefault(chave, []).append(bloco)
+
+        if not grupos:
+            return trechos
+
+        def pontuacao_grupo(blocos: list[dict]) -> tuple[float, int]:
+            pontuacoes = [resultados_por_id.get(int(bloco["id"]), -1.0) for bloco in blocos]
+            secao = unicodedata.normalize("NFKD", str(blocos[0].get("secao", ""))).encode("ascii", "ignore").decode().lower()
+            return max(pontuacoes), int("programa" in secao)
+
+        grupo = max(grupos.values(), key=pontuacao_grupo)
+        score_grupo = max(pontuacao_grupo(grupo)[0], p.limiar)
+        return [
+            dict(bloco, similaridade=round(resultados_por_id.get(int(bloco["id"]), score_grupo), 4))
+            for bloco in sorted(grupo, key=lambda item: int(item["id"]))
         ]
 
     # ------------------------------------------------------------ histórico da conversa (RF06)

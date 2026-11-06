@@ -26,6 +26,8 @@ _MINUSCULAS = "a-záéíóúâêôãõç"
 
 _RE_ARTIGO = re.compile(r"^(?:Art(?:igo)?\.?)\s*(\d+)\s*[º°o]?\b", re.IGNORECASE)
 _RE_NUMERADO = re.compile(rf"^(\d{{1,2}}\.(?:\d{{1,2}}\.?){{0,4}})\s*([{_MAIUSCULAS}].{{2,90}})$")
+_RE_SECAO_PRINCIPAL = re.compile(r"^[IVXLCDM]{1,4}\s+.+$", re.IGNORECASE)
+_RE_LISTA_PRINCIPAL = re.compile(r"^\d{1,2}\.\s+")
 _RE_PAGINA = re.compile(r"^(?:p[áa]gina\s+)?\d{1,3}(?:\s+de\s+\d{1,3})?$", re.IGNORECASE)
 _RE_ITEM = re.compile(r"^(?:[-*•▪◦]|\(?[a-z0-9]{1,3}[).])\s+")
 _RE_MES = re.compile(r"\b(" + "|".join(MESES) + r")\b")
@@ -132,6 +134,8 @@ def _eh_maiusculo(linha: str) -> bool:
 
 def _titulo_de_linha(linha: str) -> tuple[str | None, bool]:
     """Identifica títulos de seção. Retorna (título, manter_linha_no_texto)."""
+    if _RE_SECAO_PRINCIPAL.match(linha):
+        return linha.rstrip(":").strip(), False
     artigo = _RE_ARTIGO.match(linha)
     if artigo:
         return f"Art. {artigo.group(1)}", True
@@ -155,6 +159,7 @@ def _extrair_mes(linha: str) -> tuple[str, str | None]:
 
 def _segmentar_linhas(pares: Iterable[tuple[int | None, str]], calendario: bool = False) -> list[Secao]:
     acc = _Acumulador()
+    em_lista_principal = False
     for pagina, linha in pares:
         if not linha:
             acc.adicionar("", pagina)
@@ -165,9 +170,13 @@ def _segmentar_linhas(pares: Iterable[tuple[int | None, str]], calendario: bool 
                 acc.novo(mes, pagina)
             if not linha:
                 continue
+        if em_lista_principal and _RE_LISTA_PRINCIPAL.match(linha):
+            acc.adicionar(linha, pagina)
+            continue
         titulo, manter = _titulo_de_linha(linha)
         if titulo:
             acc.novo(titulo, pagina)
+            em_lista_principal = bool(_RE_SECAO_PRINCIPAL.match(titulo))
             if not manter:
                 continue
         acc.adicionar(linha, pagina)

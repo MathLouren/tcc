@@ -63,6 +63,26 @@ def test_html_ignora_menu_scripts_e_rodape(tmp_path):
         assert indesejado not in tudo
 
 
+def test_programa_da_disciplina_preserva_todos_os_itens_numerados(tmp_path):
+    arquivo = tmp_path / "plano.txt"
+    arquivo.write_text(
+        "III - PROGRAMA DA DISCIPLINA:\n"
+        "1. Algoritmos para problemas em grafos\n"
+        "2. Analise do problema e estrategias de solucao\n"
+        "15. Pratica em construcao e implementacao de algoritmos\n"
+        "20. Uso de estruturas de dados basicas e bibliotecas de software\n"
+        "IV - OBJETIVOS:\n"
+        "Aplicar os conhecimentos adquiridos na solucao de problemas reais.\n",
+        encoding="utf-8",
+    )
+    secoes = extrair_secoes(arquivo)
+    programa = next(secao for secao in secoes if "PROGRAMA DA DISCIPLINA" in secao.titulo)
+    assert "1. Algoritmos para problemas em grafos" in programa.texto
+    assert "15. Pratica em construcao e implementacao de algoritmos" in programa.texto
+    assert "20. Uso de estruturas de dados basicas e bibliotecas de software" in programa.texto
+    assert any("OBJETIVOS" in secao.titulo for secao in secoes)
+
+
 def test_blocos_respeitam_tamanho_e_tem_sobreposicao():
     texto = " ".join(f"Frase número {i} com algumas palavras de teste." for i in range(40))
     blocos = dividir_em_blocos(texto, 50, 10, contar_palavras)

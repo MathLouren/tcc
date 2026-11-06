@@ -23,6 +23,8 @@ class Servico:
     def __init__(self, config: Config | None = None, embedder=None, llm=None):
         self.config = config or carregar_config()
         self.parametros = Parametros.carregar(self.config.parametros_arquivo)
+        if self.parametros.vector_store:
+            self.config = replace(self.config, vector_store=self.parametros.vector_store)
         self.embedder = embedder if embedder is not None else criar_embedder(self.config)
         self.llm = llm if llm is not None else criar_cliente_llm(self.config)
         self.registro = Registro(self.config.registros_dir)
@@ -51,5 +53,23 @@ class Servico:
             novos.validar()
             novos.salvar(self.config.parametros_arquivo)
             self.parametros = novos
+            if "vector_store" in alteracoes and novos.vector_store:
+                self.config = replace(self.config, vector_store=novos.vector_store)
             self.motor.parametros = novos
         return novos
+
+    def alterar_vector_store(self, vector_store: str) -> tuple[Parametros, dict]:
+        """Altera o backend vetorial, persiste a escolha e reindexa a base."""
+        if vector_store not in {"local", "qdrant"}:
+            raise ValueError("vector_store deve ser 'local' ou 'qdrant'.")
+        with self._lock:
+            novos = replace(self.parametros, vector_store=vector_store)
+            novos.validar()
+            nova_config = replace(self.config, vector_store=vector_store)
+            indice, info = construir_indice(nova_config, self.embedder)
+            novos.salvar(nova_config.parametros_arquivo)
+            self.config = nova_config
+            self.parametros = novos
+            self.indice, self.info = indice, info
+            self.motor.indice = indice
+        return novos, info

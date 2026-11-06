@@ -1,0 +1,2 @@
+-r requirements.txt
+qdrant-client>=1.12

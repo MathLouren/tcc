@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Base de conhecimento · UNIVERSO</title>
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="Voltar para o chatbot">
+        <span class="brand-mark">UNV</span>
+        <span><strong>Base de conhecimento</strong><small>Chatbot Institucional UNIVERSO</small></span>
+      </a>
+      <a class="back-link" href="/">← Voltar ao chatbot</a>
+    </header>
+
+    <section class="hero">
+      <div>
+        <p class="eyebrow">Área administrativa</p>
+        <h1>Alimente o chatbot com novos documentos.</h1>
+        <p class="subtitle">Envie um arquivo oficial, informe sua origem e ele será indexado automaticamente para as próximas respostas.</p>
+      </div>
+      <div class="hero-badge"><span class="pulse"></span> Indexação automática</div>
+    </section>
+
+    <section class="stats" aria-label="Resumo da base">
+      <div class="stat-card"><span class="stat-label">Documentos indexados</span><strong id="stat-documentos">—</strong></div>
+      <div class="stat-card"><span class="stat-label">Blocos pesquisáveis</span><strong id="stat-blocos">—</strong></div>
+      <div class="stat-card"><span class="stat-label">Última atualização</span><strong id="stat-atualizacao">—</strong></div>
+      <div class="stat-card"><span class="stat-label">Busca vetorial</span><strong id="stat-busca">—</strong></div>
+    </section>
+
+    <section class="card backend-card" aria-labelledby="backend-title">
+      <div class="backend-copy">
+        <p class="eyebrow">Configuração da busca</p>
+        <h2 id="backend-title">Escolha onde os vetores serão pesquisados</h2>
+        <p>A troca salva a preferência e reindexa a base. O modo local usa FAISS com fallback para NumPy; o modo Qdrant exige um servidor Qdrant disponível.</p>
+      </div>
+      <div class="backend-controls">
+        <label for="vector-store">Backend vetorial</label>
+        <div class="backend-select-row">
+          <select id="vector-store">
+            <option value="local">Local · FAISS / NumPy</option>
+            <option value="qdrant">Qdrant · banco vetorial</option>
+          </select>
+          <button id="aplicar-backend" class="primary-button compact-button" type="button">Aplicar</button>
+        </div>
+        <small id="backend-feedback">A configuração atual será mostrada após carregar a base.</small>
+      </div>
+    </section>
+
+    <div class="layout">
+      <section class="card upload-card">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Novo conteúdo</p>
+            <h2>Adicionar arquivo</h2>
+          </div>
+          <span class="step">01</span>
+        </div>
+
+        <form id="upload-form">
+          <label class="dropzone" id="dropzone" for="arquivos" tabindex="0">
+            <input id="arquivos" name="arquivos" type="file" accept=".pdf,.html,.htm,.md,.txt" multiple>
+            <span class="upload-icon">↑</span>
+            <strong>Arraste os arquivos aqui</strong>
+            <span>ou <u>selecione no computador</u></span>
+            <small>PDF, HTML, Markdown ou TXT · até 25 MB por arquivo</small>
+          </label>
+
+          <div id="fila" class="file-queue" hidden>
+            <div class="queue-heading"><span>Arquivos selecionados</span><button id="limpar-fila" type="button">Limpar</button></div>
+            <div id="lista-arquivos"></div>
+          </div>
+
+          <div class="fields">
+            <label>Título do documento <span>opcional</span><input id="titulo" name="titulo" type="text" maxlength="180" placeholder="Ex.: Manual do Aluno 2026"></label>
+            <label>Categoria <span>opcional</span><input id="categoria" name="categoria" type="text" maxlength="60" placeholder="Ex.: manual, regulamento, calendário"></label>
+            <label>Origem <span>opcional</span><input id="origem" name="origem" type="text" maxlength="180" placeholder="Ex.: Coordenação do curso"></label>
+            <label>URL oficial <span>opcional</span><input id="url" name="url" type="url" maxlength="500" placeholder="https://..."></label>
+            <label>Data de atualização <span>opcional</span><input id="atualizado-em" name="atualizado_em" type="date"></label>
+          </div>
+
+          <div class="security-row">
+            <label class="key-field">Chave administrativa<input id="admin-key" type="password" autocomplete="off" placeholder="X-Admin-Key" required></label>
+            <p>Usada somente nesta sessão para autorizar o envio.</p>
+          </div>
+
+          <div id="feedback" class="feedback" role="status" aria-live="polite"></div>
+          <button id="enviar-arquivos" class="primary-button" type="submit" disabled>Enviar e indexar arquivos <span>→</span></button>
+        </form>
+      </section>
+
+      <aside class="card guide-card">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Como funciona</p>
+            <h2>Da pasta à resposta</h2>
+          </div>
+          <span class="step muted">02</span>
+        </div>
+        <ol class="steps">
+          <li><span>1</span><div><strong>Envie o documento</strong><p>Escolha um ou mais arquivos oficiais da instituição.</p></div></li>
+          <li><span>2</span><div><strong>O sistema organiza</strong><p>O arquivo é salvo com segurança e seus metadados entram no manifesto.</p></div></li>
+          <li><span>3</span><div><strong>A base é reindexada</strong><p>O conteúdo é dividido em trechos pesquisáveis automaticamente.</p></div></li>
+          <li><span>4</span><div><strong>O chatbot responde</strong><p>As novas fontes ficam disponíveis nas próximas perguntas.</p></div></li>
+        </ol>
+        <div class="tip"><span>i</span><p>Prefira documentos oficiais e títulos claros. Eles ajudam o chatbot a apresentar fontes confiáveis.</p></div>
+      </aside>
+    </div>
+
+    <section class="card documents-card">
+      <div class="section-heading compact">
+        <div><p class="eyebrow">Conteúdo atual</p><h2>Documentos na base</h2></div>
+        <button id="atualizar-documentos" class="ghost-button" type="button">Atualizar lista</button>
+      </div>
+      <div id="documentos" class="document-list"><div class="empty-state">Carregando documentos…</div></div>
+    </section>
+    <footer>Os arquivos são processados pelo servidor local do chatbot. A chave administrativa nunca é salva no navegador.</footer>
+  </main>
+  <script src="admin.js"></script>
+</body>
+</html>

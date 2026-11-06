@@ -45,6 +45,10 @@ class Config:
     chunk_tokens: int
     chunk_sobreposicao: int
     # Caminhos
+    vector_store: str  # "local" (FAISS/NumPy) ou "qdrant"
+    qdrant_url: str
+    qdrant_api_key: str
+    qdrant_collection: str
     docs_dir: Path
     manifesto: Path
     indice_dir: Path
@@ -64,6 +68,9 @@ def carregar_config() -> Config:
 
     provedor = _env("EMBEDDING_PROVEDOR", "sentence-transformers").lower()
     modelo_emb_padrao = "intfloat/multilingual-e5-base" if provedor == "sentence-transformers" else "bge-m3"
+    vector_store = _env("VECTOR_STORE", "local").lower()
+    if vector_store not in {"local", "qdrant"}:
+        raise ValueError("VECTOR_STORE inválido. Use 'local' ou 'qdrant'.")
 
     return Config(
         ollama_url=ollama,
@@ -77,6 +84,10 @@ def carregar_config() -> Config:
         embedding_modelo=_env("EMBEDDING_MODELO", modelo_emb_padrao),
         chunk_tokens=int(_env("CHUNK_TOKENS", "500")),
         chunk_sobreposicao=int(_env("CHUNK_SOBREPOSICAO", "50")),
+        vector_store=vector_store,
+        qdrant_url=_env("QDRANT_URL", "http://localhost:6333").rstrip("/"),
+        qdrant_api_key=_env("QDRANT_API_KEY", ""),
+        qdrant_collection=_env("QDRANT_COLLECTION", "chatbot_universo"),
         docs_dir=Path(_env("DOCS_DIR", str(BASE_DIR / "data" / "documentos"))),
         manifesto=Path(_env("MANIFESTO", str(BASE_DIR / "data" / "manifesto.json"))),
         indice_dir=Path(_env("INDICE_DIR", str(BASE_DIR / "indice"))),
@@ -94,7 +105,9 @@ PROMPT_PADRAO = (
     "Não invente datas, valores ou procedimentos e não combine regras de seções diferentes "
     "sem que os trechos indiquem essa relação. "
     "Responda em português do Brasil, de forma clara, objetiva e cordial. "
-    "Ao final, liste as fontes utilizadas no formato [Documento – seção]."
+    "Ao final, liste as fontes utilizadas no formato [Documento – seção]. "
+    "Quando a pergunta pedir uma lista, preserve a ordem do documento e inclua todos os itens relevantes; "
+    "não reorganize, resuma ou omita itens da lista oficial."
 )
 
 
@@ -107,8 +120,11 @@ class Parametros:
     temperatura: float = 0.1
     historico_trocas: int = 2
     prompt_sistema: str = PROMPT_PADRAO
+    vector_store: str | None = None
 
     def validar(self) -> None:
+        if self.vector_store not in (None, "local", "qdrant"):
+            raise ValueError("vector_store deve ser 'local' ou 'qdrant'.")
         if not 1 <= int(self.top_k) <= 20:
             raise ValueError("top_k deve estar entre 1 e 20.")
         if not 0.0 <= float(self.limiar) <= 1.0:

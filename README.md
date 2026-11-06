@@ -29,6 +29,32 @@ O chatbot localiza nos documentos oficiais os trechos que respondem à pergunta,
 
 O selo no topo da página fica verde quando o modelo de linguagem está acessível e laranja quando o sistema está em modo extrativo.
 
+## Armazenamento vetorial
+
+O sistema possui dois modos configuráveis pela variável `VECTOR_STORE`:
+
+| Valor | Funcionamento |
+|---|---|
+| `local` | Mantém os vetores em arquivos locais e usa FAISS, com fallback para NumPy. |
+| `qdrant` | Armazena vetores e metadados em uma coleção Qdrant. |
+
+O modo padrão é `local`. Para usar Qdrant, configure no `.env`:
+
+```
+VECTOR_STORE=qdrant
+QDRANT_URL=http://localhost:6333
+QDRANT_COLLECTION=chatbot_universo
+QDRANT_API_KEY=
+```
+
+Instale o Qdrant separadamente, por exemplo com Docker, e instale a dependência adicional:
+
+```
+pip install -r requirements-qdrant.txt
+```
+
+Depois reinicie o chatbot. A primeira inicialização ou uma reindexação recria a coleção a partir dos documentos de `data/documentos/`.
+
 ### Requisitos
 
 - Python 3.11 ou 3.12 (o `iniciar.bat` procura essas versões primeiro).
@@ -91,12 +117,20 @@ As rotas administrativas exigem o cabeçalho `X-Admin-Key` com o valor de `ADMIN
 | `POST /feedback` | Registra a avaliação útil / não útil de uma resposta |
 | `GET /health` | Estado do sistema, modelo de linguagem, documentos e data da última indexação |
 | `POST /admin/reindex` | Reindexa os documentos sem reiniciar o servidor |
+| `POST /admin/documentos/{arquivo}/reindexar` | Reindexa a base a partir de um documento selecionado |
+| `PUT /admin/vector-store` | Alterna entre o índice local e o Qdrant e reindexa a base |
+| `DELETE /admin/documentos/{arquivo}` | Remove um documento e reindexa a base |
 | `GET /admin/logs?limite=100` | Últimas interações, avaliações e resumo de uso |
 | `GET /admin/config` / `PUT /admin/config` | Consulta ou ajusta `top_k`, `limiar`, `temperatura`, `historico_trocas` e `prompt_sistema` |
 
 Exemplo de reindexação:
 ```
 curl.exe -X POST http://localhost:8000/admin/reindex -H "X-Admin-Key: SUA_CHAVE"
+```
+
+Para remover um documento pela API, envie o nome exato do arquivo:
+```
+curl.exe -X DELETE http://localhost:8000/admin/documentos/manual_aluno.md -H "X-Admin-Key: SUA_CHAVE"
 ```
 
 Os registros ficam em `registros/interacoes.jsonl` e `registros/avaliacoes.jsonl`. Os parâmetros ajustados ficam em `data/parametros.json`.
@@ -187,3 +221,15 @@ docker run -p 8000:8000 --env-file .env -e OLLAMA_URL=http://host.docker.interna
 | Respostas cortadas ou ignorando as instruções | Aumente `LLM_NUM_CTX` no `.env` (padrão 8192). |
 | Perguntas fora do escopo recebem resposta | Aumente o limiar com o valor sugerido por `avaliar.py`. |
 | Perguntas válidas recebem "não localizei" | Diminua o limiar ou acrescente o documento que falta à base. |
+
+## Avaliação São Gonçalo (120 perguntas)
+
+O conjunto novo e sua metodologia estão em `avaliacao/perguntas_sao_goncalo.psv` e `avaliacao/METODOLOGIA_SAO_GONCALO.md`. As 45 perguntas anteriores e seus resultados foram preservados como série histórica; não compare números de corpus diferentes como se fossem o mesmo experimento.
+
+```powershell
+.\.venv\Scripts\python.exe -m app.indexacao
+.\.venv\Scripts\python.exe avaliacao\avaliar_sao_goncalo.py --sem-juiz
+.\.venv\Scripts\python.exe avaliacao\avaliar_sao_goncalo.py --julgar avaliacao\resultados\sao_goncalo_DATA.json
+```
+
+Substitua `sao_goncalo_DATA.json` pelo arquivo gerado no passo anterior. O segundo comando produz métricas automáticas e respostas; o terceiro acrescenta notas do LLM juiz e amostra para auditoria. A avaliação com usuários tem formulários em `avaliacao/`, mas depende de coleta real.

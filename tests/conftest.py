@@ -131,6 +131,7 @@ def ambiente(tmp_path):
         registros_dir=tmp_path / "registros",
         parametros_arquivo=tmp_path / "parametros.json",
         admin_key="chave-teste",
+        vector_store="local",
         chunk_tokens=120,
         chunk_sobreposicao=20,
     )

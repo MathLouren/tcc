@@ -1,0 +1,121 @@
+# id|dificuldade|categoria|pergunta|resposta_esperada (termos separados por ;)|evidencia (trechos separados por ;)|familia
+SG001|facil|unidade_contato|Em que cidade fica a unidade descrita?|São Gonçalo|São Gonçalo/RJ|endereco
+SG002|facil|unidade_contato|Qual é a rua da unidade São Gonçalo?|Lambari|Rua Lambari, 10|endereco
+SG003|facil|unidade_contato|Qual é o número do endereço da unidade?|10|Rua Lambari, 10|endereco
+SG004|facil|unidade_contato|Em qual bairro fica a unidade?|Trindade|Trindade, São Gonçalo/RJ|endereco
+SG005|facil|unidade_contato|Qual é o estado da unidade São Gonçalo?|RJ|São Gonçalo/RJ|endereco
+SG006|facil|unidade_contato|Qual telefone a página fornece para atendimento?|0800 721 0251|0800 721 0251|telefone
+SG007|facil|unidade_contato|Qual e-mail de contato aparece na página?|contato@universo.com.br|contato@universo.com.br|email
+SG008|facil|unidade_contato|Há formulário de contato na página da unidade?|sim|formulário "Entre em Contato conosco"|formulario
+SG009|facil|unidade_contato|Há quantos anos de tradição a página atribui à instituição?|mais de 50 anos|mais de 50 anos de tradição|tradicao
+SG010|facil|infraestrutura|A página menciona biblioteca?|biblioteca|laboratórios modernos, biblioteca e espaços esportivos|estrutura
+SG011|facil|infraestrutura|A unidade apresenta espaços esportivos?|espaços esportivos|laboratórios modernos, biblioteca e espaços esportivos|estrutura
+SG012|facil|infraestrutura|Que tipo de laboratório a página destaca?|laboratórios modernos|laboratórios modernos, biblioteca e espaços esportivos|estrutura
+SG013|facil|infraestrutura|Existe seção sobre clínicas para a comunidade?|clínicas|clínicas para a comunidade|clinicas
+SG014|facil|infraestrutura|Quem aprende na prática nas clínicas mencionadas?|alunos|alunos aprendem na prática|clinicas
+SG015|facil|infraestrutura|A quem as clínicas oferecem serviços?|população|serviços à população|clinicas
+SG016|facil|infraestrutura|Qual é o nome do bloco sobre laboratórios?|Laboratórios Modernos|Laboratórios Modernos|laboratorios
+SG017|facil|infraestrutura|Qual é o nome do complexo descrito na infraestrutura?|Complexo de Excelência|Complexo de Excelência|complexo
+SG018|facil|ingresso|A página aceita nota do ENEM a partir de qual ano?|2010|notas a partir de 2010|enem
+SG019|facil|ingresso|Qual nota do ENEM dispensa a prova segundo a página?|400|igual ou superior a 400 pontos|enem
+SG020|facil|ingresso|Qual é o desconto máximo anunciado para ingresso pelo ENEM?|60%|até 60% de desconto|enem
+SG021|facil|ingresso|O vestibular pode ser agendado on-line?|sim|agendar prova on-line|vestibular
+SG022|facil|ingresso|Qual é a modalidade de prova do vestibular?|redação on-line|redação on-line|vestibular
+SG023|facil|ingresso|Qual é o desconto máximo anunciado para o vestibular?|50%|até 50% de desconto|vestibular
+SG024|facil|ingresso|O Exame de Bolsas ocorre on-line?|on-line|O Exame de Bolsas é on-line|bolsas
+SG025|facil|ingresso|Qual é o desconto máximo anunciado para o Exame de Bolsas?|100%|até 100% de desconto|bolsas
+SG026|facil|ingresso|Qual modalidade permite mudar de outra instituição para a UNIVERSO?|Transferência Externa|A Transferência Externa é descrita|transferencia
+SG027|facil|ingresso|Qual modalidade de ingresso usa um diploma anterior?|Portador de Diploma|O ingresso por Portador de Diploma|diploma
+SG028|facil|cursos|Qual pós-graduação em acupuntura está listada?|Acupuntura|Acupuntura; Enfermagem|pos_acupuntura
+SG029|facil|cursos|Há pós-graduação em Enfermagem em Urgência e Emergência listada para São Gonçalo?|Enfermagem em Urgência e Emergência|Enfermagem em Urgência e Emergência|pos_enfermagem
+SG030|facil|cursos|Qual curso de pós-graduação menciona oncologia?|Oncologia e Ciências da Saúde|Oncologia e Ciências da Saúde|pos_oncologia
+SG031|facil|cursos|Quantas opções de pós-graduação o menu contextual lista?|dez|lista dez opções de pós-graduação|pos_total
+SG032|facil|comunidade|Qual curso recebe destaque de nota 4 no MEC?|Odontologia|Odontologia com nota 4 no MEC|mec
+SG033|facil|comunidade|Qual curso aparece com nota máxima pelo MEC?|Medicina|Medicina São Gonçalo com nota máxima|mec
+SG034|facil|comunidade|Qual projeto solidário é citado nos destaques?|Projeto Universo Solidário|Projeto Universo Solidário|destaques
+SG035|facil|comunidade|Qual evento de profissões aparece nos destaques?|Universo das Profissões|Universo das Profissões|destaques
+SG036|medio|unidade_contato|Informe rua, número e bairro do campus.|Lambari;10;Trindade|Rua Lambari, 10 - Trindade|endereco
+SG037|medio|unidade_contato|Quais são o telefone e o e-mail de contato publicados?|0800 721 0251;contato@universo.com.br|0800 721 0251;contato@universo.com.br|contatos
+SG038|medio|unidade_contato|Quais dados o formulário de contato solicita?|nome;e-mail;telefone;assunto|campos para nome, e-mail, telefone e assunto|formulario
+SG039|medio|unidade_contato|A página apresenta graduação e pós-graduação?|graduação;pós-graduação|cursos de graduação e pós-graduação|niveis
+SG040|medio|unidade_contato|A unidade de tradição superior a 50 anos fica em qual cidade?|São Gonçalo|mais de 50 anos de tradição;São Gonçalo/RJ|tradicao_endereco
+SG041|medio|infraestrutura|Cite duas estruturas físicas mencionadas na apresentação.|biblioteca;laboratórios|laboratórios modernos, biblioteca e espaços esportivos|estrutura
+SG042|medio|infraestrutura|Que três estruturas aparecem na descrição geral do campus?|laboratórios;biblioteca;espaços esportivos|laboratórios modernos, biblioteca e espaços esportivos|estrutura
+SG043|medio|infraestrutura|Que atributos o bloco Laboratórios Modernos associa ao espaço?|conforto;acessibilidade;excelência|conforto, acessibilidade e excelência em ensino|laboratorios
+SG044|medio|infraestrutura|Como o Complexo de Excelência é descrito?|inovação;qualidade acadêmica|inovação, estrutura completa e qualidade acadêmica|complexo
+SG045|medio|infraestrutura|O que a seção Conectado com o Futuro promete desenvolver?|técnico;acadêmico|desenvolvimento técnico e acadêmico|futuro
+SG046|medio|infraestrutura|Qual é a função dupla das clínicas na página?|aprendem na prática;serviços à população|alunos aprendem na prática e oferecem cuidado e serviços à população|clinicas
+SG047|medio|infraestrutura|O texto identifica a especialidade de alguma clínica?|não especifica|não especifica as especialidades|clinicas_limite
+SG048|medio|ingresso|Quais dois critérios do ENEM são mencionados para dispensa de prova?|2010;400|notas a partir de 2010;igual ou superior a 400 pontos|enem
+SG049|medio|ingresso|Compare o teto de desconto do ENEM e do vestibular.|60%;50%|até 60% de desconto;até 50% de desconto|descontos
+SG050|medio|ingresso|O vestibular exige prova objetiva ou redação?|redação on-line|A prova consiste em uma redação on-line|vestibular
+SG051|medio|ingresso|Quais componentes tem a prova do Exame de Bolsas?|questões objetivas;redação|questões objetivas e redação|bolsas
+SG052|medio|ingresso|Quais formas de ingresso têm teto de desconto de 50%?|Vestibular;Transferência Externa;Portador de Diploma|O Vestibular permite;A Transferência Externa é descrita;O ingresso por Portador de Diploma|descontos_50
+SG053|medio|ingresso|Qual modalidade usa diploma e qual usa mudança de curso?|Portador de Diploma;Transferência Externa|O ingresso por Portador de Diploma;A Transferência Externa é descrita|diploma_transferencia
+SG054|medio|ingresso|É possível escolher a data da prova on-line do vestibular?|sim;data preferida|na data preferida|vestibular
+SG055|medio|ingresso|O desconto anunciado no ENEM é garantido ou máximo?|máximo|limites máximos anunciados|limite_descontos
+SG056|medio|ingresso|Quais modalidades mencionam inscrição gratuita?|ENEM;Vestibular;Transferência Externa;Portador de Diploma|inscrição gratuita|gratuidade
+SG057|medio|ingresso|Qual modalidade oferece teto de desconto de 100% e como é a prova?|Exame de Bolsas;questões objetivas;redação|O Exame de Bolsas é on-line, com questões objetivas e redação;até 100% de desconto|bolsas
+SG058|medio|cursos|Cite duas pós-graduações de fisioterapia listadas para São Gonçalo.|Fisioterapia Intensiva Adulto;Fisioterapia Intensiva Neonatal e Pediátrica|Fisioterapia Intensiva Adulto;Fisioterapia Intensiva Neonatal e Pediátrica|pos_fisioterapia
+SG059|medio|cursos|Quais pós-graduações da lista tratam de educação escolar ou aprendizagem?|Psicomotricidade e Educação Escolar;Psicopedagogia Clínica e Institucional|Psicomotricidade e Educação Escolar;Psicopedagogia Clínica e Institucional|pos_educacao
+SG060|medio|cursos|Qual curso de pós-graduação menciona exercícios e fitness?|Prescrição de Exercícios e Gestão em Fitness|Prescrição de Exercícios e Gestão em Fitness|pos_fitness
+SG061|medio|cursos|Há pós-graduação em Estética Aplicada à Saúde e em Acupuntura no menu da unidade?|Estética Aplicada à Saúde;Acupuntura|Estética Aplicada à Saúde;Acupuntura|pos_estetica_acupuntura
+SG062|medio|cursos|A navegação geral confirma a oferta presencial de todos os cursos de graduação em São Gonçalo?|não confirma|não confirma, curso a curso|oferta_limite
+SG063|medio|cursos|Qual opção de pós-graduação combina treinamento funcional e cross training?|Treinamento Funcional e Cross Training|Treinamento Funcional e Cross Training|pos_treinamento
+SG064|medio|comunidade|Compare os destaques de Medicina e Odontologia no MEC.|Medicina;nota máxima;Odontologia;nota 4|Odontologia com nota 4 no MEC e Medicina São Gonçalo com nota máxima|mec
+SG065|medio|comunidade|Que evento acadêmico Laís relata ter ajudado a organizar?|Semana da Farmácia|organização da Semana da Farmácia|depo_lais
+SG066|medio|comunidade|Quais dois recursos Sthefani cita para o aprendizado prático?|biblioteca;laboratórios|biblioteca equipada, laboratórios modernos e aprendizado prático|depo_sthefani
+SG067|medio|comunidade|Quem relata apoio estrutural e emocional depois de outra instituição?|Sarah Ruth|Sarah Ruth, estudante de Biomedicina, relata apoio estrutural e emocional|depo_sarah
+SG068|medio|comunidade|Quem relata interação entre períodos e acesso ao gestor?|Júllia Cristina|Júllia Cristina, estudante de Biomedicina em São Gonçalo|depo_jullia
+SG069|medio|comunidade|Que valores Daniele associa à formação em Direito?|crítica;ética;estratégica|formação crítica, ética e estratégica|depo_daniele
+SG070|medio|comunidade|Quais duas alunas de Pedagogia aparecem nos depoimentos?|Lanna Gabryelle Rangel;Yohanne Teles|Lanna Gabryelle Rangel, estudante de Pedagogia;Yohanne Teles, estudante de Pedagogia|depo_pedagogia
+SG071|dificil|unidade_contato|Sou candidato e preciso visitar a unidade e tirar uma dúvida por telefone. Qual endereço e número de atendimento devo usar?|Lambari;10;Trindade;0800 721 0251|Rua Lambari, 10 - Trindade;0800 721 0251|visita
+SG072|dificil|unidade_contato|Quero escrever para a unidade e depois encontrá-la. Qual e-mail e endereço aparecem na página?|contato@universo.com.br;Lambari;10|contato@universo.com.br;Rua Lambari, 10 - Trindade|visita
+SG073|dificil|unidade_contato|Quais canais de contato aparecem além do endereço físico e quais dados o formulário solicita?|0800 721 0251;contato@universo.com.br;nome;e-mail;telefone;assunto|0800 721 0251;contato@universo.com.br;campos para nome, e-mail, telefone e assunto|contatos
+SG074|dificil|infraestrutura|Como a página relaciona as clínicas à formação e ao atendimento externo?|aprendem na prática;população|alunos aprendem na prática e oferecem cuidado e serviços à população|clinicas
+SG075|dificil|infraestrutura|Uma pessoa quer saber quais especialidades clínicas são oferecidas. O que é possível afirmar com segurança?|clínicas; não especifica|clínicas para a comunidade;não especifica as especialidades|clinicas_limite
+SG076|dificil|infraestrutura|Compare a proposta dos blocos Complexo de Excelência e Conectado com o Futuro.|inovação;qualidade acadêmica;desenvolvimento técnico|inovação, estrutura completa e qualidade acadêmica;desenvolvimento técnico e acadêmico|complexo_futuro
+SG077|dificil|infraestrutura|A página menciona estruturas para estudo e para esporte. Quais?|biblioteca;laboratórios;espaços esportivos|laboratórios modernos, biblioteca e espaços esportivos|estrutura
+SG078|dificil|infraestrutura|Que elementos físicos e de acessibilidade a página associa à infraestrutura?|laboratórios;biblioteca;acessibilidade|laboratórios modernos, biblioteca e espaços esportivos;conforto, acessibilidade e excelência em ensino|estrutura_acesso
+SG079|dificil|ingresso|Tenho nota 400 no ENEM de 2010. Segundo a página, preciso fazer prova e qual é o teto de desconto anunciado?|não precisa;60%|notas a partir de 2010;igual ou superior a 400 pontos;até 60% de desconto|enem
+SG080|dificil|ingresso|Quero evitar prova e tenho nota 399 no ENEM. A página me dispensa do exame?|não|igual ou superior a 400 pontos|enem_limiar
+SG081|dificil|ingresso|Para tentar desconto máximo maior, qual teto a página anuncia para ENEM e Exame de Bolsas?|60%;100%|até 60% de desconto;até 100% de desconto|descontos
+SG082|dificil|ingresso|Uma pessoa já graduada e outra quer transferir-se. Quais processos correspondem a cada caso?|Portador de Diploma;Transferência Externa|O ingresso por Portador de Diploma;A Transferência Externa é descrita|diploma_transferencia
+SG083|dificil|ingresso|Compare o formato das provas do Vestibular e do Exame de Bolsas.|redação on-line;questões objetivas|A prova consiste em uma redação on-line;questões objetivas e redação|provas
+SG084|dificil|ingresso|A página garante 50% de desconto a todo transferido? Qual é a formulação correta?|não;até 50%|A Transferência Externa é descrita;limites máximos anunciados|limite_descontos
+SG085|dificil|ingresso|Posso informar com certeza a taxa do Exame de Bolsas com base nesta página?|contraditórias;não|informações contraditórias sobre sua taxa de inscrição|taxa_conflito
+SG086|dificil|ingresso|Quais caminhos de ingresso mencionados dispensam falar em nota do ENEM?|Vestibular;Exame de Bolsas;Transferência Externa;Portador de Diploma|O Vestibular permite;O Exame de Bolsas é on-line;A Transferência Externa é descrita;O ingresso por Portador de Diploma|modalidades
+SG087|dificil|cursos|Cite os dois cursos de pós-graduação de fisioterapia e aquele ligado à oncologia.|Fisioterapia Intensiva Adulto;Fisioterapia Intensiva Neonatal e Pediátrica;Oncologia e Ciências da Saúde|Fisioterapia Intensiva Adulto;Fisioterapia Intensiva Neonatal e Pediátrica;Oncologia e Ciências da Saúde|pos_saude
+SG088|dificil|cursos|A lista do menu de São Gonçalo inclui cursos de educação escolar e saúde? Dê um exemplo de cada.|Psicomotricidade e Educação Escolar;Oncologia e Ciências da Saúde|Psicomotricidade e Educação Escolar;Oncologia e Ciências da Saúde|pos_areas
+SG089|dificil|cursos|A presença de Sistemas de Informação no menu geral prova oferta presencial em São Gonçalo?|não|não confirma, curso a curso|oferta_limite
+SG090|dificil|cursos|Qual cuidado é necessário ao usar a lista geral de graduação para afirmar a oferta local?|não confirma;São Gonçalo|não confirma, curso a curso, a oferta presencial em São Gonçalo|oferta_limite
+SG091|dificil|cursos|Se alguém procura psicopedagogia e treinamento funcional, quais são os nomes completos das opções listadas?|Psicopedagogia Clínica e Institucional;Treinamento Funcional e Cross Training|Psicopedagogia Clínica e Institucional;Treinamento Funcional e Cross Training|pos_opcoes
+SG092|dificil|comunidade|Que cursos são associados aos dois destaques de avaliação do MEC, e quais avaliações são citadas?|Medicina;nota máxima;Odontologia;nota 4|Odontologia com nota 4 no MEC e Medicina São Gonçalo com nota máxima|mec
+SG093|dificil|comunidade|Que depoentes de Farmácia abordam laboratórios ou atividades práticas?|Laís Santos;Sthefani Figueiró|Laís Santos, estudante de Farmácia;Sthefani Figueiró, estudante de Farmácia|depo_farmacia
+SG094|dificil|comunidade|Quem mudou de instituição antes de estudar Biomedicina e quem fala de interação com outros períodos?|Sarah Ruth;Júllia Cristina|Sarah Ruth, estudante de Biomedicina;Júllia Cristina, estudante de Biomedicina|depo_biomedicina
+SG095|dificil|comunidade|Qual estudante de Pedagogia cita estágio e qual destaca a coordenação?|Lanna Gabryelle Rangel;Yohanne Teles|Lanna Gabryelle Rangel, estudante de Pedagogia;Yohanne Teles, estudante de Pedagogia|depo_pedagogia
+SG096|dificil|comunidade|Que estudante de Educação Física relata apoio docente e desenvolvimento teórico e prático?|Alexsey Brasil|Alexsey Brasil, estudante de Educação Física|depo_alexsey
+SG097|dificil|comunidade|Compare os dois depoimentos de Direito quanto ao tema principal.|Daniele;formação crítica;Fabiano;gestor|Daniele Machado Santos, estudante de Direito;Fabiano Dias de Oliveira, estudante de Direito|depo_direito
+SG098|dificil|comunidade|Que destaques mostram ações além dos cursos e das notas do MEC?|Universo das Profissões;Projeto Universo Solidário|Universo das Profissões;Projeto Universo Solidário|destaques
+SG099|dificil|comunidade|Qual depoente participou da Semana da Farmácia e qual ressalta a biblioteca?|Laís Santos;Sthefani Figueiró|organização da Semana da Farmácia;biblioteca equipada, laboratórios modernos|depo_farmacia
+SG100|dificil|comunidade|Entre os depoimentos, quais cursos são representados por mais de uma pessoa?|Farmácia;Biomedicina;Direito;Pedagogia|estudante de Farmácia;estudante de Biomedicina;estudante de Direito;estudante de Pedagogia|depo_cursos
+SG101|facil|fora_escopo|Qual é a senha do Wi-Fi da unidade?|||wifi
+SG102|facil|fora_escopo|Quanto custa minha mensalidade neste mês?|||mensalidade_pessoal
+SG103|facil|fora_escopo|Qual é a nota que tirei na última prova?|||nota_pessoal
+SG104|facil|fora_escopo|Quem ganhou a Copa do Mundo de 2022?|||conhecimento_geral
+SG105|facil|fora_escopo|Que horas a biblioteca fecha hoje?|||horario
+SG106|medio|fora_escopo|Qual é o nome do professor que lecionará para mim no próximo semestre?|||professor_pessoal
+SG107|medio|fora_escopo|Qual é o valor exato da taxa do Exame de Bolsas?|||taxa_conflito
+SG108|medio|fora_escopo|Qual é o número da sala da coordenação de Biomedicina em São Gonçalo?|||sala_coordenacao
+SG109|medio|fora_escopo|Quais são os horários de atendimento das clínicas comunitárias?|||clinicas_horario
+SG110|medio|fora_escopo|Quanto recebe um professor de Medicina nesta unidade?|||salario
+SG111|dificil|fora_escopo|Tenho nota 400 no ENEM: qual bolsa exata receberei e qual será minha mensalidade?|||bolsa_individual
+SG112|dificil|fora_escopo|Se eu mudar de instituição, quantas disciplinas serão aproveitadas no meu caso?|||aproveitamento
+SG113|dificil|fora_escopo|O curso de Sistemas de Informação terá turma presencial em São Gonçalo em 2027?|||oferta_futura
+SG114|dificil|fora_escopo|Qual é a taxa de empregabilidade dos egressos de Biomedicina na unidade?|||empregabilidade
+SG115|dificil|fora_escopo|O atendimento da clínica é gratuito para qualquer procedimento?|||clinica_preco
+SG116|dificil|fora_escopo|Qual é o nome e telefone direto do coordenador de Pedagogia?|||coordenacao
+SG117|dificil|fora_escopo|Qual a nota exata do MEC para Medicina São Gonçalo?|||mec_numero
+SG118|dificil|fora_escopo|Em que dia ocorrerá a próxima edição do Universo das Profissões?|||evento_data
+SG119|dificil|fora_escopo|Posso me matricular agora no curso de Acupuntura e qual é o preço atualizado?|||matricula_preco
+SG120|dificil|fora_escopo|Qual é a especialidade da clínica comunitária aberta hoje e como marco horário?|||clinica_agenda

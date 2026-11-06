@@ -51,7 +51,8 @@ def _unidades(texto: str, max_tokens: int, contar: ContarTokens) -> list[str]:
         paragrafo = paragrafo.strip()
         if not paragrafo:
             continue
-        for frase in _RE_FRASE.split(paragrafo):
+        frases = [paragrafo] if re.match(r"^\d{1,2}\.\s+", paragrafo) else _RE_FRASE.split(paragrafo)
+        for frase in frases:
             frase = frase.strip()
             if not frase:
                 continue
@@ -189,6 +190,10 @@ class IndiceVetorial:
     def usa_faiss(self) -> bool:
         return self._faiss is not None
 
+    @property
+    def tipo_busca(self) -> str:
+        return "faiss" if self.usa_faiss else "numpy"
+
     def buscar(self, vetor: np.ndarray, k: int) -> list[tuple[int, float]]:
         """Retorna até k pares (posição do bloco, similaridade de cosseno), do mais ao menos similar."""
         if not self.blocos or k <= 0:
@@ -203,7 +208,98 @@ class IndiceVetorial:
         return [(int(i), float(similaridades[i])) for i in ordem]
 
 
-def construir_indice(config: Config, embedder) -> tuple[IndiceVetorial, dict]:
+def criar_cliente_qdrant(config: Config):
+    """Cria o cliente Qdrant somente quando o modo qdrant foi selecionado."""
+    try:
+        from qdrant_client import QdrantClient
+    except ImportError as erro:  # pragma: no cover - depende da instalação opcional
+        raise RuntimeError(
+            "VECTOR_STORE=qdrant exige a dependência qdrant-client. "
+            "Instale-a com: pip install qdrant-client"
+        ) from erro
+
+    parametros = {"url": config.qdrant_url}
+    if config.qdrant_api_key:
+        parametros["api_key"] = config.qdrant_api_key
+    return QdrantClient(**parametros)
+
+
+class IndiceQdrant:
+    """Adaptador do índice local para uma coleção Qdrant."""
+
+    def __init__(self, cliente, colecao: str, blocos: list[dict]):
+        self.cliente = cliente
+        self.colecao = colecao
+        self.blocos = blocos
+
+    @property
+    def usa_faiss(self) -> bool:
+        return False
+
+    @property
+    def tipo_busca(self) -> str:
+        return "qdrant"
+
+    def buscar(self, vetor: np.ndarray, k: int) -> list[tuple[int, float]]:
+        if not self.blocos or k <= 0:
+            return []
+        consulta = np.asarray(vetor, dtype="float32").reshape(-1).tolist()
+        if hasattr(self.cliente, "query_points"):
+            resposta = self.cliente.query_points(
+                collection_name=self.colecao,
+                query=consulta,
+                limit=min(int(k), len(self.blocos)),
+                with_payload=True,
+            )
+            pontos = getattr(resposta, "points", resposta)
+        else:  # compatibilidade com versões antigas do qdrant-client
+            pontos = self.cliente.search(
+                collection_name=self.colecao,
+                query_vector=consulta,
+                limit=min(int(k), len(self.blocos)),
+                with_payload=True,
+            )
+        resultados = []
+        for ponto in pontos:
+            payload = getattr(ponto, "payload", None) or {}
+            posicao = payload.get("_bloco_id")
+            if posicao is not None and 0 <= int(posicao) < len(self.blocos):
+                resultados.append((int(posicao), float(getattr(ponto, "score", 0.0))))
+        return resultados
+
+
+def salvar_indice_qdrant(config: Config, vetores: np.ndarray, blocos: list[dict]):
+    """Substitui a coleção pela versão completa da reindexação atual."""
+    cliente = criar_cliente_qdrant(config)
+    from qdrant_client import models
+
+    if cliente.collection_exists(config.qdrant_collection):
+        cliente.delete_collection(config.qdrant_collection)
+    if not blocos:
+        return cliente
+
+    cliente.create_collection(
+        collection_name=config.qdrant_collection,
+        vectors_config=models.VectorParams(size=int(vetores.shape[1]), distance=models.Distance.COSINE),
+    )
+    pontos = [
+        models.PointStruct(
+            id=indice + 1,
+            vector=vetor.tolist(),
+            payload={**bloco, "_bloco_id": indice},
+        )
+        for indice, (vetor, bloco) in enumerate(zip(vetores, blocos))
+    ]
+    for inicio in range(0, len(pontos), 256):
+        cliente.upsert(
+            collection_name=config.qdrant_collection,
+            points=pontos[inicio:inicio + 256],
+            wait=True,
+        )
+    return cliente
+
+
+def construir_indice(config: Config, embedder) -> tuple[IndiceVetorial | IndiceQdrant, dict]:
     inicio = time.perf_counter()
     blocos, documentos = gerar_blocos(config, embedder.contar_tokens)
     if blocos:
@@ -221,36 +317,49 @@ def construir_indice(config: Config, embedder) -> tuple[IndiceVetorial, dict]:
         "n_blocos": len(blocos),
         "dimensao": int(vetores.shape[1]) if vetores.ndim == 2 else 0,
         "tempo_indexacao_s": round(time.perf_counter() - inicio, 2),
+        "vector_store": config.vector_store,
         "documentos": documentos,
     }
-    indice = IndiceVetorial(vetores, blocos)
+    if config.vector_store == "qdrant":
+        cliente = salvar_indice_qdrant(config, vetores, blocos)
+        indice = IndiceQdrant(cliente, config.qdrant_collection, blocos)
+    else:
+        indice = IndiceVetorial(vetores, blocos)
     salvar_indice(config.indice_dir, indice, info)
     logger.info("Índice criado: %d documentos, %d blocos.", len(documentos), len(blocos))
     return indice, info
 
 
-def salvar_indice(pasta: Path, indice: IndiceVetorial, info: dict) -> None:
+def salvar_indice(pasta: Path, indice: IndiceVetorial | IndiceQdrant, info: dict) -> None:
     pasta.mkdir(parents=True, exist_ok=True)
-    np.save(pasta / ARQ_VETORES, indice.vetores)
+    if isinstance(indice, IndiceVetorial):
+        np.save(pasta / ARQ_VETORES, indice.vetores)
     (pasta / ARQ_BLOCOS).write_text(json.dumps(indice.blocos, ensure_ascii=False), encoding="utf-8")
     (pasta / ARQ_INFO).write_text(json.dumps(info, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-def carregar_indice(config: Config) -> tuple[IndiceVetorial, dict] | None:
+def carregar_indice(config: Config) -> tuple[IndiceVetorial | IndiceQdrant, dict] | None:
     """Carrega o índice salvo; retorna None se não existir ou se foi gerado com outro modelo."""
     pasta = config.indice_dir
-    if not all((pasta / nome).exists() for nome in (ARQ_VETORES, ARQ_BLOCOS, ARQ_INFO)):
+    arquivos_obrigatorios = (ARQ_BLOCOS, ARQ_INFO) if config.vector_store == "qdrant" else (ARQ_VETORES, ARQ_BLOCOS, ARQ_INFO)
+    if not all((pasta / nome).exists() for nome in arquivos_obrigatorios):
         return None
     info = json.loads((pasta / ARQ_INFO).read_text(encoding="utf-8"))
     mesmo_modelo = (
         info.get("embedding_provedor") == config.embedding_provedor
         and info.get("embedding_modelo") == config.embedding_modelo
+        and info.get("vector_store", "local") == config.vector_store
     )
     if not mesmo_modelo:
         logger.warning("Índice gerado com outro modelo de embeddings; será reconstruído.")
         return None
-    vetores = np.load(pasta / ARQ_VETORES)
     blocos = json.loads((pasta / ARQ_BLOCOS).read_text(encoding="utf-8"))
+    if config.vector_store == "qdrant":
+        cliente = criar_cliente_qdrant(config)
+        if not cliente.collection_exists(config.qdrant_collection):
+            return None
+        return IndiceQdrant(cliente, config.qdrant_collection, blocos), info
+    vetores = np.load(pasta / ARQ_VETORES)
     return IndiceVetorial(vetores, blocos), info
 
 

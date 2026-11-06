@@ -28,6 +28,8 @@ def test_health_informa_documentos_e_modelos(cliente):
     assert dados["n_documentos"] == 3
     assert dados["n_blocos"] > 0
     assert dados["llm"]["disponivel"] is True
+    assert dados["vector_store"] == "local"
+    assert dados["busca"] in {"faiss", "numpy"}
     assert dados["ultima_indexacao"]
     assert {d["titulo"] for d in dados["documentos"]} >= {"Calendário Letivo de Teste"}
 
@@ -68,9 +70,12 @@ def test_feedback_de_interacao_inexistente_retorna_404(cliente):
 @pytest.mark.parametrize("cabecalhos", [{}, {"X-Admin-Key": "errada"}])
 def test_rotas_administrativas_exigem_chave(cliente, cabecalhos):
     assert cliente.post("/admin/reindex", headers=cabecalhos).status_code == 401
+    assert cliente.post("/admin/documentos/campus_teste.html/reindexar", headers=cabecalhos).status_code == 401
     assert cliente.get("/admin/logs", headers=cabecalhos).status_code == 401
     assert cliente.get("/admin/config", headers=cabecalhos).status_code == 401
     assert cliente.put("/admin/config", json={"top_k": 2}, headers=cabecalhos).status_code == 401
+    assert cliente.put("/admin/vector-store", json={"vector_store": "local"}, headers=cabecalhos).status_code == 401
+    assert cliente.delete("/admin/documentos/campus_teste.html", headers=cabecalhos).status_code == 401
 
 
 def test_rotas_administrativas_desativadas_sem_admin_key(ambiente):
@@ -89,6 +94,22 @@ def test_admin_config_altera_e_persiste_parametros(cliente, ambiente):
 @pytest.mark.parametrize("corpo", [{"top_k": 0}, {"limiar": 1.5}, {"prompt_sistema": "curto"}, {}])
 def test_admin_config_rejeita_valores_invalidos(cliente, corpo):
     assert cliente.put("/admin/config", json=corpo, headers=ADMIN).status_code == 422
+
+
+def test_admin_vector_store_local_persiste_e_reindexa(cliente, ambiente):
+    resposta = cliente.put("/admin/vector-store", json={"vector_store": "local"}, headers=ADMIN)
+    assert resposta.status_code == 200
+    dados = resposta.json()
+    assert dados["ok"] is True
+    assert dados["vector_store"] == "local"
+    assert dados["busca"] in {"faiss", "numpy"}
+    assert dados["n_documentos"] == 3
+    assert '"vector_store": "local"' in ambiente.parametros_arquivo.read_text(encoding="utf-8")
+
+
+def test_admin_vector_store_rejeita_valor_invalido(cliente):
+    resposta = cliente.put("/admin/vector-store", json={"vector_store": "banana"}, headers=ADMIN)
+    assert resposta.status_code == 422
 
 
 def test_admin_logs_lista_interacoes_com_avaliacao(cliente):
@@ -121,3 +142,65 @@ def test_interface_web_e_servida_na_raiz(cliente):
     assert resposta.status_code == 200
     assert "Chatbot Institucional UNIVERSO" in resposta.text
     assert cliente.get("/app.js").status_code == 200
+
+
+def test_pagina_admin_e_servida(cliente):
+    resposta = cliente.get("/admin")
+    assert resposta.status_code == 200
+    assert "Adicionar arquivo" in resposta.text
+    assert cliente.get("/admin.js").status_code == 200
+
+
+def test_admin_upload_salva_manifesto_e_reindexa(cliente, ambiente):
+    resposta = cliente.post(
+        "/admin/upload",
+        headers=ADMIN,
+        data={
+            "titulo": "Manual do Aluno",
+            "origem": "Coordenação do curso",
+            "categoria": "manual",
+            "atualizado_em": "2026-11-06",
+        },
+        files={"arquivo": ("manual_aluno.md", b"# Manual do Aluno\n\n## Matricula\nA matricula deve ser renovada no portal.")},
+    )
+    assert resposta.status_code == 200
+    dados = resposta.json()
+    assert dados["ok"] is True
+    assert dados["titulo"] == "Manual do Aluno"
+    assert dados["n_documentos"] == 4
+    assert (ambiente.docs_dir / dados["arquivo"]).exists()
+    manifesto = ambiente.manifesto.read_text(encoding="utf-8")
+    assert '"categoria": "manual"' in manifesto
+    assert cliente.get("/health").json()["n_documentos"] == 4
+
+
+def test_admin_upload_rejeita_formato_invalido(cliente, ambiente):
+    resposta = cliente.post(
+        "/admin/upload",
+        headers=ADMIN,
+        files={"arquivo": ("imagem.png", b"nao e documento")},
+    )
+    assert resposta.status_code == 415
+    assert not list(ambiente.docs_dir.glob("*.png"))
+
+
+def test_admin_delete_remove_documento_manifesto_e_reindexa(cliente, ambiente):
+    resposta = cliente.delete("/admin/documentos/campus_teste.html", headers=ADMIN)
+    assert resposta.status_code == 200
+    assert resposta.json()["n_documentos"] == 2
+    assert not (ambiente.docs_dir / "campus_teste.html").exists()
+    manifesto = ambiente.manifesto.read_text(encoding="utf-8")
+    assert "campus_teste.html" not in manifesto
+    assert cliente.get("/health").json()["n_documentos"] == 2
+
+
+def test_admin_delete_documento_inexistente_retorna_404(cliente):
+    resposta = cliente.delete("/admin/documentos/inexistente.md", headers=ADMIN)
+    assert resposta.status_code == 404
+
+
+def test_admin_reindexa_documento_especifico(cliente):
+    resposta = cliente.post("/admin/documentos/campus_teste.html/reindexar", headers=ADMIN)
+    assert resposta.status_code == 200
+    assert resposta.json()["arquivo"] == "campus_teste.html"
+    assert resposta.json()["n_documentos"] == 3

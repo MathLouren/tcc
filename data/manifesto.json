@@ -2,14 +2,6 @@
   "descricao": "Manifesto da base de conhecimento do Chatbot Institucional UNIVERSO. Cada documento em data/documentos pode ter aqui título, origem, URL, data de atualização e categoria. Esses dados aparecem nas fontes de cada resposta (RF04). Arquivos sem entrada no manifesto também são indexados, usando o nome do arquivo como título.",
   "documentos": [
     {
-      "arquivo": "calendario_letivo_2026_2_sao_goncalo.md",
-      "titulo": "Calendário Letivo 2026.2 – Universidade São Gonçalo",
-      "origem": "Sítio institucional (PDF oficial transcrito; original em data/originais)",
-      "url": "https://universo.edu.br/wp-content/uploads/2026/08/2026-2-l-Sao-Goncalo-l-Calendario-Letivo-l-22072026.pdf",
-      "atualizado_em": "2026-07-22",
-      "categoria": "calendario"
-    },
-    {
       "arquivo": "criterios_de_avaliacao.md",
       "titulo": "Critérios de Avaliação – UNIVERSO (Regimento Geral)",
       "origem": "Sítio institucional (PDF oficial transcrito; original em data/originais)",
@@ -22,7 +14,7 @@
       "titulo": "Universidade São Gonçalo – página da unidade",
       "origem": "Sítio institucional (HTML)",
       "url": "https://universo.edu.br/a-universo/estrutura/sao-goncalo/",
-      "atualizado_em": "2026-10-23",
+      "atualizado_em": "2026-11-06",
       "categoria": "campus"
     },
     {
@@ -40,6 +32,22 @@
       "url": "https://universo.edu.br/",
       "atualizado_em": "2026-10-23",
       "categoria": "servicos"
+    },
+    {
+      "arquivo": "plano_de_ensino_grafos_e_algoritmos_computacionais_2025.pdf",
+      "titulo": "Plano de ensino Grafos e Algoritmos Computacionais",
+      "origem": "Enviado pela interface administrativa",
+      "url": "",
+      "atualizado_em": "2026-11-06",
+      "categoria": "geral"
+    },
+    {
+      "arquivo": "universo_l_mia_l_2026_2_l_03112026_2.pdf",
+      "titulo": "MANUAL INFORMATIVO DO ALUNO 2026",
+      "origem": "Enviado pela interface administrativa",
+      "url": "https://universo.edu.br/wp-content/uploads/2026/11/UNIVERSO-l-MIA-l-2026.2-l-03112026-2.pdf",
+      "atualizado_em": "2026-11-06",
+      "categoria": "manual"
     }
   ],
   "pendentes": [

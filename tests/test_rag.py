@@ -80,6 +80,24 @@ def test_modo_extrativo_quando_o_llm_esta_indisponivel(ambiente):
     assert resposta.fontes
 
 
+def test_pergunta_sobre_conteudos_preserva_todos_os_itens_do_programa(servico):
+    (servico.config.docs_dir / "plano_grafos.txt").write_text(
+        "III - PROGRAMA DA DISCIPLINA:\n"
+        "1. Algoritmos para problemas em grafos\n"
+        "2. Caminhos e ciclos\n"
+        "3. Coloração de vértices e de arestas\n"
+        "IV - OBJETIVOS:\n"
+        "Aplicar algoritmos em problemas reais.\n",
+        encoding="utf-8",
+    )
+    servico.reindexar()
+    trechos = servico.motor.recuperar("Quais são os conteúdos da disciplina de grafos?")
+    texto = "\n".join(t["texto"] for t in trechos)
+    assert "1. Algoritmos para problemas em grafos" in texto
+    assert "2. Caminhos e ciclos" in texto
+    assert "3. Coloração de vértices e de arestas" in texto
+
+
 def test_fontes_sem_repeticao_e_ordenadas_por_similaridade():
     trechos = [
         {"documento": "Calendário", "secao": "Setembro", "similaridade": 0.70},
