@@ -131,6 +131,8 @@ def ambiente(tmp_path):
         registros_dir=tmp_path / "registros",
         parametros_arquivo=tmp_path / "parametros.json",
         admin_key="chave-teste",
+        admin_email="admin@universo.edu.br",
+        admin_password="senha-teste-segura",
         vector_store="local",
         chunk_tokens=120,
         chunk_sobreposicao=20,

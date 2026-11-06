@@ -78,9 +78,60 @@ def test_rotas_administrativas_exigem_chave(cliente, cabecalhos):
     assert cliente.delete("/admin/documentos/campus_teste.html", headers=cabecalhos).status_code == 401
 
 
-def test_rotas_administrativas_desativadas_sem_admin_key(ambiente):
-    cliente = TestClient(criar_app(replace(ambiente, admin_key=""), embedder=EmbedderFalso(), llm=LLMFalso()))
+def test_rotas_administrativas_desativadas_sem_credenciais(ambiente):
+    cliente = TestClient(criar_app(replace(ambiente, admin_key="", admin_email="", admin_password=""), embedder=EmbedderFalso(), llm=LLMFalso()))
     assert cliente.get("/admin/logs", headers=ADMIN).status_code == 503
+
+
+def test_chave_legada_funciona_sem_login_configurado(ambiente):
+    cliente = TestClient(criar_app(replace(ambiente, admin_email="", admin_password=""), embedder=EmbedderFalso(), llm=LLMFalso()))
+    assert cliente.get("/admin/config").status_code == 401
+    assert cliente.get("/admin/config", headers=ADMIN).status_code == 200
+
+
+def test_login_mantem_sessao_e_permite_editar_prompt(cliente, ambiente):
+    assert cliente.get("/admin/auth/session").status_code == 401
+    assert cliente.post("/admin/auth/login", json={"email": "admin@universo.edu.br", "senha": "incorreta"}).status_code == 401
+    resposta = cliente.post("/admin/auth/login", json={"email": "admin@universo.edu.br", "senha": "senha-teste-segura"})
+    assert resposta.status_code == 200
+    assert "httponly" in resposta.headers["set-cookie"].lower()
+    assert "samesite=strict" in resposta.headers["set-cookie"].lower()
+    assert cliente.get("/admin/auth/session").json()["email"] == "admin@universo.edu.br"
+    csrf = resposta.json()["csrf_token"]
+    assert cliente.get("/admin/config").status_code == 200
+    assert cliente.put("/admin/config", json={"prompt_sistema": "Responda apenas com base nos documentos oficiais."}).status_code == 403
+    alteracao = cliente.put("/admin/config", headers={"X-CSRF-Token": csrf}, json={"prompt_sistema": "Responda apenas com base nos documentos oficiais."})
+    assert alteracao.status_code == 200
+    assert alteracao.json()["prompt_sistema"] == "Responda apenas com base nos documentos oficiais."
+    assert "Responda apenas com base" in ambiente.parametros_arquivo.read_text(encoding="utf-8")
+    perguntar(cliente)
+    mensagens = cliente.app.state.servico.llm.chamadas[-1]["mensagens"]
+    assert mensagens[0]["role"] == "system"
+    assert "Responda apenas com base nos documentos oficiais." in mensagens[0]["content"]
+    assert cliente.post("/admin/auth/logout", headers={"X-CSRF-Token": csrf}).status_code == 200
+    assert cliente.get("/admin/config").status_code == 401
+
+
+def test_sessao_assinada_rejeita_alteracao_e_troca_de_senha(ambiente):
+    cliente = TestClient(criar_app(ambiente, embedder=EmbedderFalso(), llm=LLMFalso()))
+    cliente.post("/admin/auth/login", json={"email": ambiente.admin_email, "senha": ambiente.admin_password})
+    cookie = cliente.cookies["universo_admin_session"]
+    alterado = cookie[:-1] + ("A" if cookie[-1] != "A" else "B")
+    cliente_sem_sessao = TestClient(cliente.app)
+    assert cliente_sem_sessao.get("/admin/auth/session", headers={"Cookie": f"universo_admin_session={alterado}"}).status_code == 401
+    app_reiniciado = criar_app(ambiente, embedder=EmbedderFalso(), llm=LLMFalso())
+    cliente_reiniciado = TestClient(app_reiniciado)
+    assert cliente_reiniciado.get("/admin/auth/session", headers={"Cookie": f"universo_admin_session={cookie}"}).status_code == 200
+    novo_app = criar_app(replace(ambiente, admin_password="outra-senha-segura"), embedder=EmbedderFalso(), llm=LLMFalso())
+    outro_cliente = TestClient(novo_app)
+    outro_cliente.cookies.set("universo_admin_session", cookie, path="/admin")
+    assert outro_cliente.get("/admin/auth/session").status_code == 401
+
+
+def test_login_limita_tentativas_incorretas(cliente):
+    for _ in range(10):
+        assert cliente.post("/admin/auth/login", json={"email": "admin@universo.edu.br", "senha": "incorreta"}).status_code == 401
+    assert cliente.post("/admin/auth/login", json={"email": "admin@universo.edu.br", "senha": "senha-teste-segura"}).status_code == 429
 
 
 def test_admin_config_altera_e_persiste_parametros(cliente, ambiente):
@@ -148,6 +199,9 @@ def test_pagina_admin_e_servida(cliente):
     resposta = cliente.get("/admin")
     assert resposta.status_code == 200
     assert "Adicionar arquivo" in resposta.text
+    assert 'id="login-form"' in resposta.text
+    assert 'id="prompt-sistema"' in resposta.text
+    assert 'id="admin-key"' not in resposta.text
     assert cliente.get("/admin.js").status_code == 200
 
 

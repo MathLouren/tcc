@@ -16,7 +16,13 @@ from typing import Callable
 import numpy as np
 
 from .config import Config
-from .documentos import EXTENSOES_SUPORTADAS, extrair_secoes
+from .documentos import (
+    EXTENSOES_SUPORTADAS,
+    extrair_documento,
+    inferir_metadados,
+    metadados_secao,
+)
+from .identidade import gerar_chunk_id, gerar_document_id, hash_conteudo
 
 logger = logging.getLogger(__name__)
 
@@ -136,32 +142,61 @@ def gerar_blocos(config: Config, contar: ContarTokens) -> tuple[list[dict], list
             continue
         titulo = meta.get("titulo") or caminho.stem.replace("_", " ")
         try:
-            secoes = extrair_secoes(caminho)
+            secoes, diagnostico = extrair_documento(caminho)
         except Exception:
             logger.exception("Falha ao extrair %s; documento ignorado.", caminho.name)
             continue
+        meta = inferir_metadados(caminho, secoes, meta)
+        document_id = gerar_document_id(caminho.name, str(meta.get("url_canonica") or meta.get("url", "")))
         antes = len(blocos)
+        ordem_documento = 0
         for secao in secoes:
             cabecalho = f"{titulo} – {secao.titulo}"
             orcamento = max(50, config.chunk_tokens - contar(cabecalho))
             for parte in dividir_em_blocos(secao.texto, orcamento, config.chunk_sobreposicao, contar):
+                chunk_id = gerar_chunk_id(document_id, secao.titulo, ordem_documento, parte)
+                especificos = metadados_secao(secao, meta)
                 blocos.append({
                     "id": len(blocos),
+                    "document_id": document_id,
+                    "chunk_id": chunk_id,
+                    "chunk_ordem": ordem_documento,
                     "documento": titulo,
                     "arquivo": caminho.name,
                     "secao": secao.titulo,
                     "pagina": secao.pagina,
                     "url": meta.get("url", ""),
+                    "url_canonica": meta.get("url_canonica", ""),
                     "atualizado_em": meta.get("atualizado_em", ""),
                     "categoria": meta.get("categoria", ""),
                     "texto": parte,
+                    "origem": meta.get("origem", ""),
+                    "campus": meta.get("campus", ""),
+                    "tipo_documento": meta.get("tipo_documento", ""),
+                    "modalidade": meta.get("modalidade", ""),
+                    "curso": meta.get("curso", ""),
+                    "periodo": meta.get("periodo", ""),
+                    "mes": especificos.get("mes", meta.get("mes")),
+                    "ano": especificos.get("ano", meta.get("ano")),
+                    "data_coleta": meta.get("data_coleta", ""),
+                    "content_hash": meta.get("content_hash", ""),
+                    "chunk_hash": hash_conteudo(parte),
+                    "embedding_modelo": config.embedding_modelo,
+                    "extracao": diagnostico,
                 })
+                ordem_documento += 1
         documentos.append({
             "arquivo": caminho.name,
             "titulo": titulo,
             "url": meta.get("url", ""),
+            "url_canonica": meta.get("url_canonica", ""),
             "atualizado_em": meta.get("atualizado_em", ""),
             "categoria": meta.get("categoria", ""),
+            "document_id": document_id,
+            **{campo: meta[campo] for campo in (
+                "origem", "campus", "tipo_documento", "modalidade", "curso", "periodo", "data_coleta"
+            ) if meta.get(campo)},
+            "extracao": diagnostico,
             "blocos": len(blocos) - antes,
         })
         logger.info("%s: %d blocos", caminho.name, len(blocos) - antes)
@@ -194,18 +229,32 @@ class IndiceVetorial:
     def tipo_busca(self) -> str:
         return "faiss" if self.usa_faiss else "numpy"
 
-    def buscar(self, vetor: np.ndarray, k: int) -> list[tuple[int, float]]:
+    @staticmethod
+    def _aceita(bloco: dict, filtros: dict | None) -> bool:
+        return not filtros or all(
+            str(bloco.get(chave, "")).lower() == str(valor).lower()
+            for chave, valor in filtros.items()
+        )
+
+    def buscar(self, vetor: np.ndarray, k: int, filtros: dict | None = None) -> list[tuple[int, float]]:
         """Retorna até k pares (posição do bloco, similaridade de cosseno), do mais ao menos similar."""
         if not self.blocos or k <= 0:
             return []
-        k = min(int(k), len(self.blocos))
+        candidatos = [i for i, bloco in enumerate(self.blocos) if self._aceita(bloco, filtros)]
+        if not candidatos:
+            return []
+        k = min(int(k), len(candidatos))
         consulta = np.ascontiguousarray(np.asarray(vetor, dtype="float32").reshape(1, -1))
-        if self._faiss is not None:
+        if self._faiss is not None and not filtros:
             similaridades, posicoes = self._faiss.search(consulta, k)
             return [(int(i), float(s)) for i, s in zip(posicoes[0], similaridades[0]) if i >= 0]
-        similaridades = self.vetores @ consulta[0]
+        if self._faiss is not None:
+            similaridades = self.vetores[candidatos] @ consulta[0]
+            ordem = np.argsort(-similaridades, kind="stable")[:k]
+            return [(int(candidatos[i]), float(similaridades[i])) for i in ordem]
+        similaridades = self.vetores[candidatos] @ consulta[0]
         ordem = np.argsort(-similaridades, kind="stable")[:k]
-        return [(int(i), float(similaridades[i])) for i in ordem]
+        return [(int(candidatos[i]), float(similaridades[i])) for i in ordem]
 
 
 def criar_cliente_qdrant(config: Config):
@@ -225,12 +274,12 @@ def criar_cliente_qdrant(config: Config):
 
 
 class IndiceQdrant:
-    """Adaptador do índice local para uma coleção Qdrant."""
+    """Recuperação pelo payload Qdrant, inclusive registros inteiros legados."""
 
-    def __init__(self, cliente, colecao: str, blocos: list[dict]):
+    def __init__(self, cliente, colecao: str, blocos: list[dict] | None = None):
         self.cliente = cliente
         self.colecao = colecao
-        self.blocos = blocos
+        self.blocos = blocos or []  # compatibilidade com relatórios existentes
 
     @property
     def usa_faiss(self) -> bool:
@@ -240,62 +289,97 @@ class IndiceQdrant:
     def tipo_busca(self) -> str:
         return "qdrant"
 
-    def buscar(self, vetor: np.ndarray, k: int) -> list[tuple[int, float]]:
-        if not self.blocos or k <= 0:
+    @staticmethod
+    def _filtro_qdrant(filtros: dict | None):
+        if not filtros:
+            return None
+        from qdrant_client import models
+        return models.Filter(must=[
+            models.FieldCondition(key=chave, match=models.MatchValue(value=valor))
+            for chave, valor in filtros.items()
+        ])
+
+    def buscar(self, vetor: np.ndarray, k: int, filtros: dict | None = None) -> list[dict]:
+        if k <= 0:
             return []
         consulta = np.asarray(vetor, dtype="float32").reshape(-1).tolist()
+        filtro = self._filtro_qdrant(filtros)
+        extras = {"query_filter": filtro} if filtro is not None else {}
         if hasattr(self.cliente, "query_points"):
             resposta = self.cliente.query_points(
-                collection_name=self.colecao,
-                query=consulta,
-                limit=min(int(k), len(self.blocos)),
-                with_payload=True,
+                collection_name=self.colecao, query=consulta,
+                limit=int(k * 2), with_payload=True,
+                **extras,
             )
             pontos = getattr(resposta, "points", resposta)
-        else:  # compatibilidade com versões antigas do qdrant-client
+        else:
             pontos = self.cliente.search(
-                collection_name=self.colecao,
-                query_vector=consulta,
-                limit=min(int(k), len(self.blocos)),
-                with_payload=True,
+                collection_name=self.colecao, query_vector=consulta,
+                limit=int(k * 2), with_payload=True,
+                **extras,
             )
         resultados = []
         for ponto in pontos:
-            payload = getattr(ponto, "payload", None) or {}
-            posicao = payload.get("_bloco_id")
-            if posicao is not None and 0 <= int(posicao) < len(self.blocos):
-                resultados.append((int(posicao), float(getattr(ponto, "score", 0.0))))
+            bloco = dict(getattr(ponto, "payload", None) or {})
+            if not bloco.get("texto"):
+                continue
+            bloco.setdefault("id", str(ponto.id))
+            bloco["similaridade"] = float(getattr(ponto, "score", 0.0))
+            resultados.append(bloco)
         return resultados
 
+    def listar_blocos(self, max_blocos: int = 10000, filtros: dict | None = None) -> list[dict]:
+        """Busca paginada de blocos para recuperar programas/ementas completos."""
+        blocos = []
+        offset = None
+        filtro = self._filtro_qdrant(filtros)
+        while len(blocos) < max_blocos:
+            argumentos = {
+                "collection_name": self.colecao,
+                "limit": min(256, max_blocos - len(blocos)),
+                "offset": offset, "with_payload": True, "with_vectors": False,
+            }
+            if filtro is not None:
+                argumentos["scroll_filter"] = filtro
+            pontos, offset = self.cliente.scroll(**argumentos)
+            for ponto in pontos:
+                bloco = dict(ponto.payload or {})
+                if not bloco.get("texto"):
+                    continue
+                bloco.setdefault("id", str(ponto.id))
+                blocos.append(bloco)
+            if offset is None:
+                break
+        return blocos
 
-def salvar_indice_qdrant(config: Config, vetores: np.ndarray, blocos: list[dict]):
-    """Substitui a coleção pela versão completa da reindexação atual."""
+
+def salvar_indice_qdrant(config: Config, vetores: np.ndarray, blocos: list[dict], *, remover_legados: bool = False):
+    """Upsert por arquivo e migração gradual de IDs legados, sem delete_collection."""
     cliente = criar_cliente_qdrant(config)
-    from qdrant_client import models
-
-    if cliente.collection_exists(config.qdrant_collection):
-        cliente.delete_collection(config.qdrant_collection)
     if not blocos:
         return cliente
+    from qdrant_client import models
+    from .qdrant_incremental import validar_colecao, preparar_pontos, upsert_incremental
 
-    cliente.create_collection(
-        collection_name=config.qdrant_collection,
-        vectors_config=models.VectorParams(size=int(vetores.shape[1]), distance=models.Distance.COSINE),
-    )
-    pontos = [
-        models.PointStruct(
-            id=indice + 1,
-            vector=vetor.tolist(),
-            payload={**bloco, "_bloco_id": indice},
-        )
-        for indice, (vetor, bloco) in enumerate(zip(vetores, blocos))
-    ]
-    for inicio in range(0, len(pontos), 256):
-        cliente.upsert(
+    tamanho = int(vetores.shape[1])
+    # A dimensão sozinha não prova compatibilidade entre modelos diferentes.
+    info_arquivo = config.indice_dir / ARQ_INFO
+    if cliente.collection_exists(config.qdrant_collection) and info_arquivo.exists():
+        info_atual = json.loads(info_arquivo.read_text(encoding="utf-8"))
+        if (info_atual.get("embedding_provedor") != config.embedding_provedor or
+                info_atual.get("embedding_modelo") != config.embedding_modelo):
+            raise RuntimeError("Modelo incompatível com info.json; coleção preservada.")
+    validar_colecao(cliente, config.qdrant_collection, tamanho)
+    if not cliente.collection_exists(config.qdrant_collection):
+        cliente.create_collection(
             collection_name=config.qdrant_collection,
-            points=pontos[inicio:inicio + 256],
-            wait=True,
+            vectors_config=models.VectorParams(size=tamanho, distance=models.Distance.COSINE),
         )
+    pontos = preparar_pontos(blocos, vetores)
+    upsert_incremental(
+        cliente, config.qdrant_collection, pontos,
+        remover_legados=remover_legados,
+    )
     return cliente
 
 
@@ -323,6 +407,10 @@ def construir_indice(config: Config, embedder) -> tuple[IndiceVetorial | IndiceQ
     if config.vector_store == "qdrant":
         cliente = salvar_indice_qdrant(config, vetores, blocos)
         indice = IndiceQdrant(cliente, config.qdrant_collection, blocos)
+        info["n_blocos"] = (
+            int(cliente.count(collection_name=config.qdrant_collection, exact=True).count)
+            if cliente.collection_exists(config.qdrant_collection) else 0
+        )
     else:
         indice = IndiceVetorial(vetores, blocos)
     salvar_indice(config.indice_dir, indice, info)
@@ -339,28 +427,41 @@ def salvar_indice(pasta: Path, indice: IndiceVetorial | IndiceQdrant, info: dict
 
 
 def carregar_indice(config: Config) -> tuple[IndiceVetorial | IndiceQdrant, dict] | None:
-    """Carrega o índice salvo; retorna None se não existir ou se foi gerado com outro modelo."""
+    """No Qdrant, a coleção é a fonte de verdade; arquivos locais são opcionais.
+
+    Não reconstrói uma coleção existente por ausência de blocos.json/info.json.
+    Se info.json indicar outro modelo, falha explicitamente, sem tocar nos pontos.
+    """
     pasta = config.indice_dir
-    arquivos_obrigatorios = (ARQ_BLOCOS, ARQ_INFO) if config.vector_store == "qdrant" else (ARQ_VETORES, ARQ_BLOCOS, ARQ_INFO)
-    if not all((pasta / nome).exists() for nome in arquivos_obrigatorios):
-        return None
-    info = json.loads((pasta / ARQ_INFO).read_text(encoding="utf-8"))
-    mesmo_modelo = (
-        info.get("embedding_provedor") == config.embedding_provedor
-        and info.get("embedding_modelo") == config.embedding_modelo
-        and info.get("vector_store", "local") == config.vector_store
-    )
-    if not mesmo_modelo:
-        logger.warning("Índice gerado com outro modelo de embeddings; será reconstruído.")
-        return None
-    blocos = json.loads((pasta / ARQ_BLOCOS).read_text(encoding="utf-8"))
     if config.vector_store == "qdrant":
         cliente = criar_cliente_qdrant(config)
         if not cliente.collection_exists(config.qdrant_collection):
             return None
-        return IndiceQdrant(cliente, config.qdrant_collection, blocos), info
-    vetores = np.load(pasta / ARQ_VETORES)
-    return IndiceVetorial(vetores, blocos), info
+        arq_info = pasta / ARQ_INFO
+        if arq_info.exists():
+            info = json.loads(arq_info.read_text(encoding="utf-8"))
+            if (info.get("embedding_provedor") != config.embedding_provedor or
+                    info.get("embedding_modelo") != config.embedding_modelo or
+                    info.get("vector_store") != "qdrant"):
+                raise RuntimeError("Modelo do Qdrant diverge de info.json; coleção preservada. Verifique o .env.")
+        else:
+            logger.warning("info.json ausente: modelo dos vetores antigos não pode ser comprovado.")
+            info = {"embedding_provedor": config.embedding_provedor,
+                    "embedding_modelo": config.embedding_modelo,
+                    "vector_store": "qdrant", "documentos": [], "n_documentos": 0}
+        info["n_blocos"] = int(cliente.count(collection_name=config.qdrant_collection, exact=True).count)
+        return IndiceQdrant(cliente, config.qdrant_collection), info
+
+    arquivos = (ARQ_VETORES, ARQ_BLOCOS, ARQ_INFO)
+    if not all((pasta / nome).exists() for nome in arquivos):
+        return None
+    info = json.loads((pasta / ARQ_INFO).read_text(encoding="utf-8"))
+    if (info.get("embedding_provedor") != config.embedding_provedor or
+            info.get("embedding_modelo") != config.embedding_modelo or
+            info.get("vector_store", "local") != "local"):
+        return None
+    blocos = json.loads((pasta / ARQ_BLOCOS).read_text(encoding="utf-8"))
+    return IndiceVetorial(np.load(pasta / ARQ_VETORES), blocos), info
 
 
 if __name__ == "__main__":

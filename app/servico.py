@@ -11,7 +11,7 @@ from dataclasses import replace
 
 from .config import Config, Parametros, carregar_config
 from .embeddings import criar_embedder
-from .indexacao import carregar_indice, construir_indice
+from .indexacao import IndiceQdrant, carregar_indice, construir_indice
 from .llm import criar_cliente_llm
 from .rag import MotorRAG
 from .registros import Registro
@@ -45,6 +45,80 @@ class Servico:
             self.indice, self.info = indice, info
             self.motor.indice = indice
         return info
+
+
+    def reindexar_documento(self, nome: str) -> dict:
+        """Reindexa somente o documento indicado no Qdrant; local mantém rebuild."""
+        if self.config.vector_store != "qdrant":
+            return self.reindexar()
+        from datetime import datetime
+        from .indexacao import gerar_blocos, texto_para_embedding, salvar_indice_qdrant
+        from .qdrant_incremental import contar_pontos
+        caminho = self.config.docs_dir / nome
+        if not caminho.is_file():
+            raise ValueError("Arquivo não encontrado.")
+        with self._lock:
+            todos, documentos = gerar_blocos(self.config, self.embedder.contar_tokens)
+            blocos = [b for b in todos if b["arquivo"] == nome]
+            if not blocos:
+                raise ValueError("Documento sem conteúdo indexável.")
+            vetores = self.embedder.embed_documentos([texto_para_embedding(b) for b in blocos])
+            cliente = salvar_indice_qdrant(self.config, vetores, blocos, remover_legados=True)
+            self.info = dict(self.info)
+            existentes = {d["arquivo"]: d for d in self.info.get("documentos", [])}
+            for d in documentos:
+                if d["arquivo"] == nome:
+                    existentes[nome] = d
+            self.info.update({"documentos": list(existentes.values()),
+                              "n_documentos": len(existentes),
+                              "n_blocos": contar_pontos(cliente, self.config.qdrant_collection),
+                              "data_indexacao": datetime.now().isoformat(timespec="seconds")})
+            self.indice = IndiceQdrant(cliente, self.config.qdrant_collection)
+            self.motor.indice = self.indice
+            self.config.indice_dir.mkdir(parents=True, exist_ok=True)
+            (self.config.indice_dir / "info.json").write_text(
+                __import__("json").dumps(self.info, ensure_ascii=False, indent=2), encoding="utf-8")
+            return self.info
+
+    def remover_documento_qdrant(self, nome: str) -> dict:
+        """Remoção seletiva ANTES de excluir o arquivo físico."""
+        if self.config.vector_store != "qdrant":
+            return self.info
+        from datetime import datetime
+        from .qdrant_incremental import remover_arquivo, contar_pontos
+        with self._lock:
+            removidos = remover_arquivo(self.indice.cliente, self.config.qdrant_collection, nome)
+            self.info = dict(self.info)
+            docs = [d for d in self.info.get("documentos", []) if d["arquivo"] != nome]
+            self.info.update({"documentos": docs, "n_documentos": len(docs),
+                              "n_blocos": contar_pontos(self.indice.cliente, self.config.qdrant_collection),
+                              "data_indexacao": datetime.now().isoformat(timespec="seconds")})
+            logger.info("Documento %s: %s pontos removidos do Qdrant", nome, removidos)
+            self.config.indice_dir.mkdir(parents=True, exist_ok=True)
+            (self.config.indice_dir / "info.json").write_text(
+                __import__("json").dumps(self.info, ensure_ascii=False, indent=2), encoding="utf-8")
+            return self.info
+
+    def sincronizar_crawler(self, *, aplicar: bool = False, max_paginas: int = 25) -> dict:
+        """Executa coleta explicitamente via painel/API; serializa mudanças."""
+        from .crawler import sincronizar
+        from .qdrant_incremental import contar_pontos
+        from .indexacao import carregar_manifesto
+        with self._lock:
+            resumo = sincronizar(self.config, self.embedder, aplicar=aplicar, max_paginas=max_paginas)
+            if aplicar:
+                manifesto = carregar_manifesto(self.config.manifesto)
+                self.info = dict(self.info)
+                self.info.update({"documentos": [
+                    {"arquivo": nome, "titulo": m.get("titulo", nome), "url": m.get("url", ""),
+                     "atualizado_em": m.get("atualizado_em", ""), "categoria": m.get("categoria", "")}
+                    for nome, m in manifesto.items()],
+                    "n_documentos": len(manifesto),
+                    "n_blocos": contar_pontos(self.indice.cliente, self.config.qdrant_collection)})
+                self.config.indice_dir.mkdir(parents=True, exist_ok=True)
+                (self.config.indice_dir / "info.json").write_text(
+                    __import__("json").dumps(self.info, ensure_ascii=False, indent=2), encoding="utf-8")
+            return resumo
 
     def atualizar_parametros(self, alteracoes: dict) -> Parametros:
         """RF10: ajusta top_k, limiar, temperatura, histórico e prompt; persiste em parametros.json."""

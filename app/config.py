@@ -56,6 +56,8 @@ class Config:
     parametros_arquivo: Path
     # Segurança (RNF07: credenciais fora do código)
     admin_key: str
+    admin_email: str
+    admin_password: str
 
 
 def carregar_config() -> Config:
@@ -94,6 +96,8 @@ def carregar_config() -> Config:
         registros_dir=Path(_env("REGISTROS_DIR", str(BASE_DIR / "registros"))),
         parametros_arquivo=Path(_env("PARAMETROS_ARQUIVO", str(BASE_DIR / "data" / "parametros.json"))),
         admin_key=_env("ADMIN_KEY", ""),
+        admin_email=_env("ADMIN_EMAIL", ""),
+        admin_password=_env("ADMIN_PASSWORD", ""),
     )
 
 
@@ -107,7 +111,11 @@ PROMPT_PADRAO = (
     "Responda em português do Brasil, de forma clara, objetiva e cordial. "
     "Ao final, liste as fontes utilizadas no formato [Documento – seção]. "
     "Quando a pergunta pedir uma lista, preserve a ordem do documento e inclua todos os itens relevantes; "
-    "não reorganize, resuma ou omita itens da lista oficial."
+    "não reorganize, resuma ou omita itens da lista oficial. "
+    "Para datas, associe sempre o dia ao mês, ano, evento e página que aparecem no mesmo documento. "
+    "Não responda apenas com números soltos: escreva a data completa quando a fonte permitir. "
+    "Diferencie calendário/evento acadêmico de regra normativa do regimento. "
+    "Não misture documentos de modalidades, campi ou períodos diferentes; se houver conflito, informe-o."
 )
 
 
@@ -119,6 +127,8 @@ class Parametros:
     limiar: float = 0.60
     temperatura: float = 0.1
     historico_trocas: int = 2
+    contexto_max_blocos: int = 32
+    multiplicador_calendario: int = 4
     prompt_sistema: str = PROMPT_PADRAO
     vector_store: str | None = None
 
@@ -133,6 +143,10 @@ class Parametros:
             raise ValueError("temperatura deve estar entre 0 e 2.")
         if not 0 <= int(self.historico_trocas) <= 10:
             raise ValueError("historico_trocas deve estar entre 0 e 10.")
+        if not 4 <= int(self.contexto_max_blocos) <= 128:
+            raise ValueError("contexto_max_blocos deve estar entre 4 e 128.")
+        if not 1 <= int(self.multiplicador_calendario) <= 10:
+            raise ValueError("multiplicador_calendario deve estar entre 1 e 10.")
         if not str(self.prompt_sistema).strip():
             raise ValueError("prompt_sistema não pode ser vazio.")
 

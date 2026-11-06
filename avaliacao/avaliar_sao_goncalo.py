@@ -275,6 +275,42 @@ def executar(max_perguntas: int | None, sem_llm: bool, sem_juiz: bool, saida: Pa
     return prefixo.with_suffix(".json")
 
 
+def reexecutar_falha(caminho: Path, ident: str) -> Path:
+    dados = json.loads(caminho.read_text(encoding="utf-8"))
+    perguntas = {q["id"]: q for q in carregar_perguntas()}
+    if ident not in perguntas or ident not in {r["id"] for r in dados["resultados"]}:
+        raise ValueError(f"item inexistente: {ident}")
+    if not any(r["id"] == ident and r["modo"] != "llm" for r in dados["resultados"]):
+        raise ValueError("somente falhas de geracao podem ser reexecutadas")
+    config = carregar_config()
+    hashes = {"sha256_documento": (RAIZ / "data" / "documentos" / FONTE).read_bytes(),
+              "sha256_indice": (config.indice_dir / "blocos.json").read_bytes(),
+              "sha256_perguntas": ARQUIVO.read_bytes()}
+    for chave, conteudo in hashes.items():
+        if hashlib.sha256(conteudo).hexdigest() != dados["meta"][chave]:
+            raise ValueError(f"{chave} mudou desde a rodada original")
+    servico = Servico(config)
+    if (servico.parametros.top_k != dados["meta"]["top_k"]
+            or servico.parametros.limiar != dados["meta"]["limiar"]
+            or config.llm_modelo != dados["meta"]["llm_resposta"]):
+        raise ValueError("modelo ou parametros mudaram")
+    novo = avaliar_uma(servico, perguntas[ident])
+    if novo["modo"] != "llm":
+        raise RuntimeError(f"nova tentativa ainda nao usou o LLM: {novo['modo']}")
+    dados["resultados"] = [novo if r["id"] == ident else r for r in dados["resultados"]]
+    dados["resumo"] = resumir(dados["resultados"])
+    dados["meta"]["reexecucao_por_falha"] = {"id": ident, "data": datetime.now().isoformat(timespec="seconds")}
+    saida = caminho.with_name(caminho.stem + "_completo.json")
+    saida.write_text(json.dumps(dados, ensure_ascii=False, indent=2), encoding="utf-8")
+    saida.with_suffix(".md").write_text(
+        "# Avaliacao Sao Goncalo - 120 respostas com LLM\n\n"
+        + f"Base: `{caminho.name}`; {ident} reexecutada apos HTTP 500 do Ollama.\n\n"
+        + "```json\n" + json.dumps(dados["resumo"], ensure_ascii=False, indent=2) + "\n```\n",
+        encoding="utf-8",
+    )
+    return saida
+
+
 def julgar_resultados(caminho: Path) -> Path:
     dados = json.loads(caminho.read_text(encoding="utf-8"))
     config = carregar_config()
@@ -337,9 +373,15 @@ def main() -> None:
     parser.add_argument("--sem-llm", action="store_true")
     parser.add_argument("--sem-juiz", action="store_true")
     parser.add_argument("--julgar", type=Path, help="julga um resultado completo em segunda passagem")
+    parser.add_argument("--reexecutar", type=Path, help="reexecuta um item que caiu em modo extrativo")
+    parser.add_argument("--id", help="id do item para --reexecutar")
     parser.add_argument("--saida", type=Path, default=RAIZ / "avaliacao" / "resultados")
     args = parser.parse_args()
-    if args.julgar:
+    if args.reexecutar:
+        if not args.id:
+            parser.error("--reexecutar exige --id")
+        print(reexecutar_falha(args.reexecutar, args.id))
+    elif args.julgar:
         print(julgar_resultados(args.julgar))
     else:
         print(executar(args.max_perguntas, args.sem_llm, args.sem_juiz, args.saida))

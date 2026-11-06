@@ -11,7 +11,7 @@ if not exist ".venv\Scripts\python.exe" (
 if not exist ".env" (
   copy ".env.example" ".env" >nul
   echo.
-  echo Arquivo .env criado. Ajuste OLLAMA_URL e ADMIN_KEY nele se necessario.
+  echo Arquivo .env criado. Ajuste OLLAMA_URL, ADMIN_EMAIL e ADMIN_PASSWORD nele se necessario.
   echo.
 )
 

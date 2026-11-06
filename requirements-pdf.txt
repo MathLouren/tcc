@@ -1,0 +1,7 @@
+# Extras opcionais para PDFs complexos e OCR.
+# O pipeline continua funcionando com pypdf quando estes pacotes não estão instalados.
+-r requirements.txt
+pymupdf>=1.24
+pdfplumber>=0.11
+pytesseract>=0.3.13
+Pillow>=10

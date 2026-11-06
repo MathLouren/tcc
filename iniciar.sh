@@ -12,7 +12,7 @@ fi
 
 if [ ! -f .env ]; then
   cp .env.example .env
-  echo "Arquivo .env criado. Ajuste OLLAMA_URL e ADMIN_KEY nele se necessario."
+  echo "Arquivo .env criado. Ajuste OLLAMA_URL, ADMIN_EMAIL e ADMIN_PASSWORD nele se necessario."
 fi
 
 if [ ! -f .venv/.instalado ] \
@@ -31,7 +31,7 @@ fi
 
 if [ ! -f .env ]; then
   cp .env.example .env
-  echo "Arquivo .env criado. Ajuste OLLAMA_URL e ADMIN_KEY nele se necessário."
+  echo "Arquivo .env criado. Ajuste OLLAMA_URL, ADMIN_EMAIL e ADMIN_PASSWORD nele se necessário."
 fi
 
 echo "Iniciando o chatbot em http://localhost:${PORTA:-8000} (Ctrl+C para encerrar)"

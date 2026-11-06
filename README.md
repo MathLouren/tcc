@@ -12,11 +12,13 @@ O chatbot localiza nos documentos oficiais os trechos que respondem à pergunta,
    ```
    Se o Ollama estiver em **outra máquina** da rede, inicie-o aceitando conexões externas, definindo a variável `OLLAMA_HOST=0.0.0.0` antes de `ollama serve`.
 
-2. **Configure o endereço do Ollama.** Na primeira execução o script cria o arquivo `.env` a partir de `.env.example`. Edite apenas:
+2. **Configure o `.env`.** Na primeira execução o script cria o arquivo a partir de `.env.example`. Preencha:
    ```
    OLLAMA_URL=http://localhost:11434        # ou http://IP_DA_MAQUINA:11434
    LLM_MODELO=llama3.1:8b                   # o modelo baixado no passo 1
-   ADMIN_KEY=uma-senha-forte                # para as rotas /admin
+   ADMIN_EMAIL=seu-email@exemplo.com       # login em /admin
+   ADMIN_PASSWORD=uma-senha-forte           # login em /admin
+   ADMIN_KEY=outra-chave-opcional           # para scripts antigos via X-Admin-Key
    ```
 
 3. **Inicie o chatbot:**
@@ -109,7 +111,9 @@ curl.exe -X PUT http://localhost:8000/admin/config -H "X-Admin-Key: SUA_CHAVE" -
 
 ## Administração
 
-As rotas administrativas exigem o cabeçalho `X-Admin-Key` com o valor de `ADMIN_KEY`. Se `ADMIN_KEY` estiver vazia, elas ficam desativadas.
+Abra `/admin` e entre com `ADMIN_EMAIL` e `ADMIN_PASSWORD`. A sessão fica ativa neste navegador por até 30 dias; mudar o e-mail ou a senha no `.env` e reiniciar o servidor invalida as sessões anteriores. O prompt do sistema pode ser editado nessa página: ao salvar, ele é gravado em `data/parametros.json` e passa a valer nas próximas respostas, sem reindexar os documentos.
+
+Para scripts existentes, `ADMIN_KEY` continua opcional e autoriza as rotas com o cabeçalho `X-Admin-Key`. Requisições da interface usam a sessão e um token CSRF. Se nenhuma dessas credenciais estiver configurada, as rotas administrativas ficam desativadas. Em acesso remoto, use HTTPS para proteger o login e a sessão.
 
 | Rota | Função |
 |---|---|

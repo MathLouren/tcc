@@ -1,6 +1,6 @@
 "use strict";
 
-const estado = { arquivos: [] };
+const estado = { arquivos: [], csrfToken: null, promptOriginal: "" };
 const $ = (seletor) => document.querySelector(seletor);
 const extensoes = new Set(["pdf", "html", "htm", "md", "txt"]);
 
@@ -22,8 +22,74 @@ function mostrarFeedback(mensagem, tipo) {
   elemento.className = `feedback show ${tipo}`;
 }
 
+function mostrarMensagem(seletor, mensagem, tipo) {
+  const elemento = $(seletor);
+  elemento.textContent = mensagem;
+  elemento.className = `feedback show ${tipo}`;
+}
+
+function mostrarLogin(mensagem = "") {
+  estado.csrfToken = null;
+  $("#admin-app").hidden = true;
+  $("#sair-admin").hidden = true;
+  $("#login-card").hidden = false;
+  if (mensagem) mostrarMensagem("#login-feedback", mensagem, "error");
+}
+
+function mostrarDashboard(dados) {
+  estado.csrfToken = dados.csrf_token;
+  $("#login-card").hidden = true;
+  $("#admin-app").hidden = false;
+  $("#sair-admin").hidden = false;
+  $("#login-senha").value = "";
+  atualizarBotao();
+}
+
+async function fetchAdmin(url, opcoes = {}) {
+  const cabecalhos = new Headers(opcoes.headers || {});
+  if (estado.csrfToken && !["GET", "HEAD"].includes((opcoes.method || "GET").toUpperCase())) {
+    cabecalhos.set("X-CSRF-Token", estado.csrfToken);
+  }
+  const resposta = await fetch(url, { ...opcoes, headers: cabecalhos, credentials: "same-origin" });
+  if (resposta.status === 401) mostrarLogin("Sua sessão terminou. Entre novamente.");
+  return resposta;
+}
+
+function atualizarPromptBotao() {
+  const valor = $("#prompt-sistema").value;
+  $("#prompt-contagem").textContent = `${valor.length} / 4000 caracteres`;
+  $("#salvar-prompt").disabled = !estado.csrfToken || valor.trim().length < 20 || valor.length > 4000 || valor === estado.promptOriginal;
+}
+
+async function carregarPrompt() {
+  try {
+    const resposta = await fetchAdmin("/admin/config");
+    const dados = await resposta.json().catch(() => ({}));
+    if (!resposta.ok) throw new Error(dados.detail || "Não foi possível carregar o prompt.");
+    estado.promptOriginal = dados.prompt_sistema || "";
+    $("#prompt-sistema").value = estado.promptOriginal;
+    atualizarPromptBotao();
+  } catch (erro) {
+    mostrarMensagem("#prompt-feedback", erro.message, "error");
+  }
+}
+
+async function verificarSessao() {
+  try {
+    const resposta = await fetch("/admin/auth/session", { credentials: "same-origin" });
+    if (!resposta.ok) {
+      mostrarLogin(resposta.status === 503 ? "Configure ADMIN_EMAIL e ADMIN_PASSWORD no arquivo .env e reinicie o servidor." : "");
+      return;
+    }
+    mostrarDashboard(await resposta.json());
+    await Promise.all([carregarDocumentos(), carregarPrompt()]);
+  } catch (erro) {
+    mostrarLogin("Não foi possível verificar a sessão. Tente novamente.");
+  }
+}
+
 function atualizarBotao() {
-  $("#enviar-arquivos").disabled = estado.arquivos.length === 0 || !$("#admin-key").value.trim();
+  $("#enviar-arquivos").disabled = estado.arquivos.length === 0 || !estado.csrfToken;
 }
 
 function renderizarFila() {
@@ -72,23 +138,16 @@ function atualizarBackend(dados) {
 }
 
 async function removerDocumento(arquivo, titulo) {
-  const chave = $("#admin-key").value.trim();
-  if (!chave) {
-    mostrarFeedback("Informe a chave administrativa antes de remover um documento.", "error");
-    $("#admin-key").focus();
-    return;
-  }
-  if (!window.confirm(`Remover “${titulo}”? O arquivo será apagado e a base será reindexada.`)) return;
+  if (!window.confirm(`Remover “${titulo}”? O arquivo e os vetores deste documento serão apagados.`)) return;
 
   mostrarFeedback(`Removendo ${titulo}…`, "loading");
   try {
-    const resposta = await fetch(`/admin/documentos/${encodeURIComponent(arquivo)}`, {
+    const resposta = await fetchAdmin(`/admin/documentos/${encodeURIComponent(arquivo)}`, {
       method: "DELETE",
-      headers: { "X-Admin-Key": chave },
     });
     const corpo = await resposta.json().catch(() => ({}));
     if (!resposta.ok) throw new Error(corpo.detail || "Não foi possível remover o documento.");
-    mostrarFeedback(`Documento removido e base reindexada: ${titulo}.`, "success");
+    mostrarFeedback(`Documento removido e somente seus vetores foram excluídos: ${titulo}.`, "success");
     await carregarDocumentos();
   } catch (erro) {
     mostrarFeedback(erro.message, "error");
@@ -96,23 +155,16 @@ async function removerDocumento(arquivo, titulo) {
 }
 
 async function reindexarDocumento(arquivo, titulo) {
-  const chave = $("#admin-key").value.trim();
-  if (!chave) {
-    mostrarFeedback("Informe a chave administrativa antes de reindexar um documento.", "error");
-    $("#admin-key").focus();
-    return;
-  }
-  if (!window.confirm(`Reindexar “${titulo}”? A base será reconstruída para manter os índices consistentes.`)) return;
+  if (!window.confirm(`Reindexar “${titulo}”? Apenas os vetores deste documento serão atualizados.`)) return;
 
   mostrarFeedback(`Reindexando ${titulo}…`, "loading");
   try {
-    const resposta = await fetch(`/admin/documentos/${encodeURIComponent(arquivo)}/reindexar`, {
+    const resposta = await fetchAdmin(`/admin/documentos/${encodeURIComponent(arquivo)}/reindexar`, {
       method: "POST",
-      headers: { "X-Admin-Key": chave },
     });
     const corpo = await resposta.json().catch(() => ({}));
     if (!resposta.ok) throw new Error(corpo.detail || "Não foi possível reindexar o documento.");
-    mostrarFeedback(`Documento reindexado: ${titulo}. Base atualizada com ${corpo.n_blocos} blocos.`, "success");
+    mostrarFeedback(`Documento reindexado sem apagar os demais: ${titulo}. ${corpo.n_blocos} blocos na coleção.`, "success");
     await carregarDocumentos();
   } catch (erro) {
     mostrarFeedback(erro.message, "error");
@@ -180,9 +232,8 @@ async function enviarArquivo(arquivo, indice, total) {
   dados.append("origem", $("#origem").value.trim());
   dados.append("url", $("#url").value.trim());
   dados.append("atualizado_em", $("#atualizado-em").value);
-  const resposta = await fetch("/admin/upload", {
+  const resposta = await fetchAdmin("/admin/upload", {
     method: "POST",
-    headers: { "X-Admin-Key": $("#admin-key").value.trim() },
     body: dados,
   });
   const corpo = await resposta.json().catch(() => ({}));
@@ -199,7 +250,57 @@ document.addEventListener("DOMContentLoaded", () => {
   ["dragleave", "drop"].forEach((evento) => dropzone.addEventListener(evento, (e) => { e.preventDefault(); dropzone.classList.remove("is-over"); }));
   dropzone.addEventListener("drop", (e) => adicionarArquivos(e.dataTransfer.files));
   dropzone.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); input.click(); } });
-  $("#admin-key").addEventListener("input", atualizarBotao);
+  $("#login-form").addEventListener("submit", async (evento) => {
+    evento.preventDefault();
+    const botao = $("#entrar-admin");
+    botao.disabled = true;
+    mostrarMensagem("#login-feedback", "Entrando…", "loading");
+    try {
+      const resposta = await fetch("/admin/auth/login", {
+        method: "POST", credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: $("#login-email").value.trim(), senha: $("#login-senha").value }),
+      });
+      const dados = await resposta.json().catch(() => ({}));
+      if (!resposta.ok) throw new Error(dados.detail || "Não foi possível entrar.");
+      mostrarDashboard(dados);
+      await Promise.all([carregarDocumentos(), carregarPrompt()]);
+    } catch (erro) {
+      mostrarMensagem("#login-feedback", erro.message, "error");
+    } finally {
+      botao.disabled = false;
+    }
+  });
+  $("#sair-admin").addEventListener("click", async () => {
+    try {
+      const resposta = await fetchAdmin("/admin/auth/logout", { method: "POST" });
+      if (!resposta.ok) throw new Error("Não foi possível encerrar a sessão.");
+      mostrarLogin();
+      $("#login-feedback").className = "feedback";
+    } catch (erro) {
+      mostrarFeedback(erro.message, "error");
+    }
+  });
+  $("#prompt-sistema").addEventListener("input", atualizarPromptBotao);
+  $("#salvar-prompt").addEventListener("click", async () => {
+    const botao = $("#salvar-prompt");
+    botao.disabled = true;
+    mostrarMensagem("#prompt-feedback", "Salvando prompt…", "loading");
+    try {
+      const resposta = await fetchAdmin("/admin/config", {
+        method: "PUT", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt_sistema: $("#prompt-sistema").value }),
+      });
+      const dados = await resposta.json().catch(() => ({}));
+      if (!resposta.ok) throw new Error(dados.detail || "Não foi possível salvar o prompt.");
+      estado.promptOriginal = dados.prompt_sistema;
+      mostrarMensagem("#prompt-feedback", "Prompt salvo. As próximas respostas já usarão estas instruções.", "success");
+    } catch (erro) {
+      mostrarMensagem("#prompt-feedback", erro.message, "error");
+    } finally {
+      atualizarPromptBotao();
+    }
+  });
   $("#lista-arquivos").addEventListener("click", (e) => {
     const botao = e.target.closest(".remove-file");
     if (!botao) return;
@@ -209,21 +310,15 @@ document.addEventListener("DOMContentLoaded", () => {
   $("#limpar-fila").addEventListener("click", () => { estado.arquivos = []; renderizarFila(); });
   $("#atualizar-documentos").addEventListener("click", carregarDocumentos);
   $("#aplicar-backend").addEventListener("click", async () => {
-    const chave = $("#admin-key").value.trim();
     const backend = $("#vector-store").value;
-    if (!chave) {
-      mostrarFeedback("Informe a chave administrativa antes de trocar o backend.", "error");
-      $("#admin-key").focus();
-      return;
-    }
     if (!window.confirm(`Trocar para ${backend === "qdrant" ? "Qdrant" : "o índice local"}? A base será reindexada.`)) return;
     const botao = $("#aplicar-backend");
     botao.disabled = true;
     mostrarFeedback("Alterando o backend e reindexando a base…", "loading");
     try {
-      const resposta = await fetch("/admin/vector-store", {
+      const resposta = await fetchAdmin("/admin/vector-store", {
         method: "PUT",
-        headers: { "Content-Type": "application/json", "X-Admin-Key": chave },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ vector_store: backend }),
       });
       const corpo = await resposta.json().catch(() => ({}));
@@ -260,5 +355,5 @@ document.addEventListener("DOMContentLoaded", () => {
       atualizarBotao();
     }
   });
-  carregarDocumentos();
+  verificarSessao();
 });

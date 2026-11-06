@@ -7,10 +7,11 @@ Rotas (Quadro 3 do TCC):
     POST /chat              pergunta do aluno -> resposta, fontes e tempo de processamento
     POST /feedback          avaliação útil / não útil de uma resposta
     GET  /health            estado da aplicação e data da última indexação
-    POST /admin/reindex     reindexa a base de conhecimento          (cabeçalho X-Admin-Key)
-    GET  /admin/logs        registros de interações                  (cabeçalho X-Admin-Key)
-    GET  /admin/config      parâmetros atuais                        (cabeçalho X-Admin-Key)
-    PUT  /admin/config      ajusta k, limiar, temperatura e prompt   (cabeçalho X-Admin-Key)
+    POST /admin/reindex     reindexa a base de conhecimento
+    GET  /admin/logs        registros de interações
+    GET  /admin/config      parâmetros atuais
+    PUT  /admin/config      ajusta k, limiar, temperatura e prompt
+As rotas administrativas aceitam sessão de login ou X-Admin-Key para scripts.
 A documentação interativa fica em /docs.
 """
 import logging
@@ -22,12 +23,13 @@ from datetime import date
 from dataclasses import asdict
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Query, UploadFile
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Query, Request, UploadFile
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from .config import Config
+from .admin_auth import AdminAuth, COOKIE_NAME, SESSION_SECONDS
 from .servico import Servico
 
 WEB_DIR = Path(__file__).resolve().parent.parent / "web"
@@ -51,11 +53,23 @@ class ParametrosIn(BaseModel):
     limiar: float | None = Field(default=None, ge=0.0, le=1.0)
     temperatura: float | None = Field(default=None, ge=0.0, le=2.0)
     historico_trocas: int | None = Field(default=None, ge=0, le=10)
+    contexto_max_blocos: int | None = Field(default=None, ge=4, le=128)
+    multiplicador_calendario: int | None = Field(default=None, ge=1, le=10)
     prompt_sistema: str | None = Field(default=None, min_length=20, max_length=4000)
+
+
+class CrawlerIn(BaseModel):
+    aplicar: bool = False
+    max_paginas: int = Field(default=25, ge=1, le=200)
 
 
 class VectorStoreIn(BaseModel):
     vector_store: str = Field(..., pattern="^(local|qdrant)$")
+
+
+class LoginIn(BaseModel):
+    email: str = Field(..., min_length=3, max_length=254)
+    senha: str = Field(..., min_length=1, max_length=1024)
 
 
 def _nome_seguro(nome: str) -> str:
@@ -100,13 +114,65 @@ def criar_app(config: Config | None = None, embedder=None, llm=None) -> FastAPI:
         description="Sistema de resposta a perguntas baseado em RAG para atendimento aos alunos.",
     )
     app.state.servico = servico
+    admin_auth = AdminAuth(servico.config.admin_email, servico.config.admin_password)
 
-    def exigir_admin(x_admin_key: str | None = Header(default=None)) -> None:
+    def exigir_sessao(request: Request) -> dict:
+        if not admin_auth.habilitado:
+            raise HTTPException(503, "Configure ADMIN_EMAIL e ADMIN_PASSWORD no .env.")
+        sessao = admin_auth.verificar_sessao(request.cookies.get(COOKIE_NAME))
+        if sessao is None:
+            raise HTTPException(401, "Faça login para acessar a área administrativa.")
+        return sessao
+
+    def exigir_admin(
+        request: Request,
+        x_admin_key: str | None = Header(default=None),
+        x_csrf_token: str | None = Header(default=None),
+    ) -> None:
         chave = servico.config.admin_key
-        if not chave:
-            raise HTTPException(503, "ADMIN_KEY não configurada no servidor (arquivo .env).")
-        if not x_admin_key or not secrets.compare_digest(x_admin_key.encode(), chave.encode()):
+        if not chave and not admin_auth.habilitado:
+            raise HTTPException(503, "Configure ADMIN_EMAIL e ADMIN_PASSWORD ou ADMIN_KEY no .env.")
+        if x_admin_key is not None:
+            if chave and secrets.compare_digest(x_admin_key.encode(), chave.encode()):
+                return
             raise HTTPException(401, "Chave administrativa inválida.")
+        if not admin_auth.habilitado:
+            raise HTTPException(401, "Chave administrativa ausente.")
+        sessao = exigir_sessao(request)
+        if request.method not in {"GET", "HEAD", "OPTIONS"}:
+            if not x_csrf_token or not secrets.compare_digest(x_csrf_token, sessao["csrf"]):
+                raise HTTPException(403, "Token de segurança inválido. Atualize a página e tente novamente.")
+
+    @app.post("/admin/auth/login")
+    def login(dados: LoginIn, request: Request):
+        if not admin_auth.habilitado:
+            raise HTTPException(503, "Configure ADMIN_EMAIL e ADMIN_PASSWORD no .env.")
+        endereco = request.client.host if request.client else "desconhecido"
+        if not admin_auth.pode_tentar(endereco):
+            raise HTTPException(429, "Muitas tentativas de login. Tente novamente em alguns minutos.")
+        if not admin_auth.autenticar(dados.email, dados.senha):
+            admin_auth.registrar_falha(endereco)
+            raise HTTPException(401, "E-mail ou senha inválidos.")
+        token, csrf = admin_auth.criar_sessao()
+        resposta = JSONResponse({"email": admin_auth.email, "csrf_token": csrf}, headers={"Cache-Control": "no-store"})
+        resposta.set_cookie(
+            COOKIE_NAME, token, max_age=SESSION_SECONDS, httponly=True,
+            secure=request.url.scheme == "https", samesite="strict", path="/admin",
+        )
+        return resposta
+
+    @app.get("/admin/auth/session")
+    def sessao_atual(sessao: dict = Depends(exigir_sessao)):
+        return JSONResponse(
+            {"email": admin_auth.email, "csrf_token": sessao["csrf"]},
+            headers={"Cache-Control": "no-store"},
+        )
+
+    @app.post("/admin/auth/logout", dependencies=[Depends(exigir_admin)])
+    def logout():
+        resposta = JSONResponse({"ok": True}, headers={"Cache-Control": "no-store"})
+        resposta.delete_cookie(COOKIE_NAME, path="/admin", samesite="strict")
+        return resposta
 
     @app.post("/chat")
     def chat(dados: PerguntaIn):
@@ -183,7 +249,7 @@ def criar_app(config: Config | None = None, embedder=None, llm=None) -> FastAPI:
         if not caminho.is_file():
             raise HTTPException(404, "Documento não encontrado.")
         try:
-            info = servico.reindexar()
+            info = servico.reindexar_documento(nome)
         except Exception as erro:
             raise HTTPException(500, f"Não foi possível reindexar o documento: {erro}") from erro
         indexados = {documento["arquivo"] for documento in info.get("documentos", [])}
@@ -203,7 +269,7 @@ def criar_app(config: Config | None = None, embedder=None, llm=None) -> FastAPI:
 
     @app.get("/admin/config", dependencies=[Depends(exigir_admin)])
     def obter_config():
-        return asdict(servico.parametros)
+        return JSONResponse(asdict(servico.parametros), headers={"Cache-Control": "no-store"})
 
     @app.put("/admin/config", dependencies=[Depends(exigir_admin)])
     def alterar_config(dados: ParametrosIn):
@@ -272,7 +338,7 @@ def criar_app(config: Config | None = None, embedder=None, llm=None) -> FastAPI:
                 "categoria": (categoria or "").strip() or "geral",
             }
             _atualizar_manifesto(servico.config.manifesto, entrada)
-            info = servico.reindexar()
+            info = servico.reindexar_documento(destino.name)
         except HTTPException:
             destino.unlink(missing_ok=True)
             raise
@@ -319,6 +385,11 @@ def criar_app(config: Config | None = None, embedder=None, llm=None) -> FastAPI:
             if not isinstance(item, dict) or item.get("arquivo") != nome
         ]
 
+        if servico.config.vector_store == "qdrant":
+            try:
+                servico.remover_documento_qdrant(nome)
+            except Exception as erro:
+                raise HTTPException(500, f"Não foi possível remover o índice do documento: {erro}") from erro
         caminho.unlink()
         if isinstance(manifesto, dict) and len(documentos_restantes) != len(documentos):
             manifesto["documentos"] = documentos_restantes
@@ -330,7 +401,7 @@ def criar_app(config: Config | None = None, embedder=None, llm=None) -> FastAPI:
             temporario.replace(servico.config.manifesto)
 
         try:
-            info = servico.reindexar()
+            info = servico.reindexar() if servico.config.vector_store != "qdrant" else servico.info
         except Exception as erro:
             raise HTTPException(500, f"Documento removido, mas a reindexação falhou: {erro}") from erro
 
@@ -341,6 +412,23 @@ def criar_app(config: Config | None = None, embedder=None, llm=None) -> FastAPI:
             "n_blocos": info["n_blocos"],
             "data_indexacao": info["data_indexacao"],
         }
+
+
+    @app.get("/admin/crawler/status", dependencies=[Depends(exigir_admin)])
+    def estado_crawler():
+        from .estado_crawler import carregar_estado
+        caminho = servico.config.manifesto.parent / "crawler_state.json"
+        estado = carregar_estado(caminho)
+        return {"documentos": len(estado["documentos"]), "urls": list(estado["documentos"].keys())}
+
+    @app.post("/admin/crawler/sincronizar", dependencies=[Depends(exigir_admin)])
+    def sincronizar_crawler(dados: CrawlerIn):
+        if servico.config.vector_store != "qdrant":
+            raise HTTPException(422, "Crawler requer VECTOR_STORE=qdrant")
+        try:
+            return servico.sincronizar_crawler(aplicar=dados.aplicar, max_paginas=dados.max_paginas)
+        except (ValueError, RuntimeError) as erro:
+            raise HTTPException(422, str(erro)) from erro
 
     @app.get("/admin", response_class=HTMLResponse, include_in_schema=False)
     def pagina_admin():

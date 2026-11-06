@@ -9,7 +9,7 @@ from __future__ import annotations
 import re
 import unicodedata
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterable
 
@@ -40,6 +40,33 @@ class Secao:
     titulo: str
     texto: str
     pagina: int | None = None
+    metadados: dict = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class DiagnosticoExtracao:
+    """Sinais de qualidade da extração sem esconder falhas do parser."""
+
+    formato: str
+    paginas: int = 0
+    paginas_com_texto: int = 0
+    paginas_com_baixa_extracao: tuple[int, ...] = ()
+    tabelas_detectadas: int = 0
+    ocr_disponivel: bool = False
+    ocr_usado: bool = False
+    alertas: tuple[str, ...] = ()
+
+    def como_dict(self) -> dict:
+        return {
+            "formato": self.formato,
+            "paginas": self.paginas,
+            "paginas_com_texto": self.paginas_com_texto,
+            "paginas_com_baixa_extracao": list(self.paginas_com_baixa_extracao),
+            "tabelas_detectadas": self.tabelas_detectadas,
+            "ocr_disponivel": self.ocr_disponivel,
+            "ocr_usado": self.ocr_usado,
+            "alertas": list(self.alertas),
+        }
 
 
 # ---------------------------------------------------------------- limpeza
@@ -50,6 +77,9 @@ def normalizar(texto: str) -> str:
     texto = texto.replace("­", "").replace("\xa0", " ").replace("\t", " ")
     texto = re.sub(r"[\x00-\x08\x0b-\x1f\x7f]", "", texto)
     texto = re.sub(rf"([{_MINUSCULAS}])-\n([{_MINUSCULAS}])", r"\1\2", texto)
+    # Alguns PDFs colocam vários eventos na mesma linha visual. Preserve cada
+    # marcador para não fundir datas e eventos no mesmo chunk.
+    texto = re.sub(r"\s+(?=[✓•▪◦])", "\n", texto)
     return texto
 
 
@@ -194,14 +224,124 @@ def _linhas_repetidas(paginas: list[list[str]]) -> set[str]:
     return {l for l, n in contagem.items() if n >= minimo and len(l) < 200}
 
 
-def _extrair_pdf(caminho: Path, calendario: bool) -> list[Secao]:
+def _ocr_paginas(caminho: Path, paginas: list[int]) -> dict[int, str]:
+    """OCR opcional para páginas sem texto; ausência da ferramenta é explícita."""
+    try:
+        import fitz
+        import pytesseract
+        from PIL import Image
+    except ImportError:
+        return {}
+
+    resultados = {}
+    try:
+        documento = fitz.open(str(caminho))
+        for numero in paginas:
+            pagina = documento.load_page(numero - 1)
+            pixmap = pagina.get_pixmap(matrix=fitz.Matrix(2, 2), alpha=False)
+            imagem = Image.frombytes("RGB", [pixmap.width, pixmap.height], pixmap.samples)
+            resultados[numero] = pytesseract.image_to_string(imagem, lang="por+eng")
+        documento.close()
+    except Exception:
+        return {}
+    return resultados
+
+
+def _tem_ocr() -> bool:
+    try:
+        import fitz  # noqa: F401
+        import pytesseract  # noqa: F401
+        from PIL import Image  # noqa: F401
+    except ImportError:
+        return False
+    return True
+
+
+def _extrair_tabelas(caminho: Path) -> tuple[list[Secao], int]:
+    """Usa pdfplumber quando instalado, preservando células como colunas delimitadas."""
+    try:
+        import pdfplumber
+    except ImportError:
+        return [], 0
+
+    secoes = []
+    total = 0
+    try:
+        with pdfplumber.open(str(caminho)) as documento:
+            for numero, pagina in enumerate(documento.pages, start=1):
+                for tabela in pagina.extract_tables() or []:
+                    linhas = []
+                    for linha in tabela:
+                        celulas = [re.sub(r"\s+", " ", (celula or "")).strip() for celula in linha]
+                        if any(celulas):
+                            linhas.append(" | ".join(celulas))
+                    texto = "\n".join(linhas).strip()
+                    if texto:
+                        total += 1
+                        secoes.append(Secao(f"Tabela - página {numero}", texto, numero))
+    except Exception:
+        return [], 0
+    return secoes, total
+
+
+def _extrair_pdf_detalhado(caminho: Path, calendario: bool) -> tuple[list[Secao], DiagnosticoExtracao]:
     from pypdf import PdfReader
 
     leitor = PdfReader(str(caminho))
-    paginas = [(n, limpar_linhas(p.extract_text() or "")) for n, p in enumerate(leitor.pages, start=1)]
+    paginas = []
+    baixas = []
+    for n, pagina in enumerate(leitor.pages, start=1):
+        try:
+            texto = pagina.extract_text() or ""
+        except Exception:
+            texto = ""
+        linhas = limpar_linhas(texto)
+        paginas.append((n, linhas))
+        quantidade = len(re.sub(r"\s+", "", "".join(linhas)))
+        if quantidade < 40:
+            baixas.append(n)
+
+    ocr_paginas = _ocr_paginas(caminho, baixas)
+    ocr_usado = False
+    if ocr_paginas:
+        paginas = [
+            (n, limpar_linhas(ocr_paginas[n])) if n in ocr_paginas and len("".join(linhas)) < len("".join(ocr_paginas[n]))
+            else (n, linhas)
+            for n, linhas in paginas
+        ]
+        ocr_usado = True
+
     repetidas = _linhas_repetidas([linhas for _, linhas in paginas])
     pares = ((n, l) for n, linhas in paginas for l in linhas if l not in repetidas)
-    return _segmentar_linhas(pares, calendario)
+    secoes = _segmentar_linhas(pares, calendario)
+    tabelas, quantidade_tabelas = _extrair_tabelas(caminho)
+    # Só adiciona tabelas que não sejam meras duplicações do texto principal.
+    texto_principal = " ".join(s.texto for s in secoes)
+    for tabela in tabelas:
+        amostra = tabela.texto[:300]
+        if amostra and amostra not in texto_principal:
+            secoes.append(tabela)
+
+    alertas = []
+    if baixas and not ocr_paginas:
+        alertas.append("Há páginas com pouca ou nenhuma extração; OCR opcional não disponível ou falhou.")
+    if not secoes:
+        alertas.append("Nenhuma seção textual foi extraída.")
+    diagnostico = DiagnosticoExtracao(
+        formato="pdf",
+        paginas=len(paginas),
+        paginas_com_texto=sum(bool(linhas) for _, linhas in paginas),
+        paginas_com_baixa_extracao=tuple(baixas),
+        tabelas_detectadas=quantidade_tabelas,
+        ocr_disponivel=_tem_ocr(),
+        ocr_usado=ocr_usado,
+        alertas=tuple(alertas),
+    )
+    return secoes, diagnostico
+
+
+def _extrair_pdf(caminho: Path, calendario: bool) -> list[Secao]:
+    return _extrair_pdf_detalhado(caminho, calendario)[0]
 
 
 def _extrair_html(caminho: Path) -> list[Secao]:
@@ -280,3 +420,69 @@ def extrair_secoes(caminho: Path) -> list[Secao]:
     if extensao == ".txt":
         return _segmentar_linhas(((None, l) for l in limpar_linhas(texto)), calendario)
     raise ValueError(f"Formato não suportado: {caminho.name}")
+
+
+def inferir_metadados(caminho: Path, secoes: list[Secao], metadados: dict | None = None) -> dict:
+    """Preenche somente metadados sustentados pelo nome, URL ou texto extraído."""
+    dados = dict(metadados or {})
+    evidencia = " ".join([caminho.name, str(dados.get("titulo", "")), str(dados.get("url", ""))] +
+                         [f"{s.titulo} {s.texto}" for s in secoes])
+    normalizada = unicodedata.normalize("NFKD", evidencia).encode("ascii", "ignore").decode().lower()
+
+    if not dados.get("tipo_documento"):
+        tipos = (
+            ("calendario", r"calend[aá]rio|calendario academico"),
+            ("regimento", r"regimento|criterios? de avaliacao"),
+            ("manual", r"manual informativo|\bmia\b"),
+            ("plano_ensino", r"plano de ensino|ementa"),
+        )
+        for tipo, padrao in tipos:
+            if re.search(padrao, normalizada, re.IGNORECASE):
+                dados["tipo_documento"] = tipo
+                break
+
+    if not dados.get("modalidade"):
+        if re.search(r"\bead\b|a distancia|a distância|semipresencial", normalizada):
+            dados["modalidade"] = "ead" if re.search(r"\bead\b|a distancia|a distância", normalizada) else "semipresencial"
+        elif re.search(r"\bpresencial\b", normalizada):
+            dados["modalidade"] = "presencial"
+
+    if not dados.get("periodo"):
+        periodo = re.search(r"([12])\s*(?:º|o|°)?\s*semestre\s*(?:de\s*)?(20\d{2})", normalizada)
+        if periodo:
+            dados["periodo"] = f"{periodo.group(2)}.{periodo.group(1)}"
+        else:
+            periodo = re.search(r"\b(20\d{2})[_./-]([12])\b", normalizada)
+            if periodo:
+                dados["periodo"] = f"{periodo.group(1)}.{periodo.group(2)}"
+
+    if not dados.get("campus") and re.search(r"sao goncalo|são gonçalo", normalizada):
+        dados["campus"] = "sao_goncalo"
+
+    return dados
+
+
+def metadados_secao(secao: Secao, documento: dict) -> dict:
+    """Obtém mês/ano apenas quando a própria seção ou o documento os sustentam."""
+    dados = {}
+    nome = normalizar(secao.titulo).upper()
+    for numero, mes in enumerate(MESES, start=1):
+        if mes in nome:
+            dados["mes"] = numero
+            break
+    periodo = str(documento.get("periodo", ""))
+    ano = re.match(r"(20\d{2})\.\d", periodo)
+    if ano:
+        dados["ano"] = int(ano.group(1))
+    return dados
+
+
+def extrair_documento(caminho: Path) -> tuple[list[Secao], dict]:
+    """API detalhada: seções e diagnóstico, mantendo extrair_secoes compatível."""
+    caminho = Path(caminho)
+    extensao = caminho.suffix.lower()
+    calendario = "calend" in caminho.stem.lower()
+    if extensao == ".pdf":
+        secoes, diagnostico = _extrair_pdf_detalhado(caminho, calendario)
+        return secoes, diagnostico.como_dict()
+    return extrair_secoes(caminho), {"formato": extensao.lstrip("."), "paginas": 0, "alertas": []}

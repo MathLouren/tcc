@@ -13,9 +13,24 @@
         <span class="brand-mark">UNV</span>
         <span><strong>Base de conhecimento</strong><small>Chatbot Institucional UNIVERSO</small></span>
       </a>
-      <a class="back-link" href="/">← Voltar ao chatbot</a>
+      <div class="topbar-actions"><button id="sair-admin" class="ghost-button" type="button" hidden>Sair</button><a class="back-link" href="/">← Voltar ao chatbot</a></div>
     </header>
 
+    <section id="login-card" class="card login-card" hidden>
+      <p class="eyebrow">Acesso administrativo</p>
+      <h1>Entre para gerenciar o chatbot.</h1>
+      <p class="subtitle">Use o e-mail e a senha configurados no servidor.</p>
+      <form id="login-form">
+        <label for="login-email">E-mail</label>
+        <input id="login-email" type="email" autocomplete="username" required>
+        <label for="login-senha">Senha</label>
+        <input id="login-senha" type="password" autocomplete="current-password" required>
+        <div id="login-feedback" class="feedback" role="status" aria-live="polite"></div>
+        <button id="entrar-admin" class="primary-button" type="submit">Entrar</button>
+      </form>
+    </section>
+
+    <div id="admin-app" hidden>
     <section class="hero">
       <div>
         <p class="eyebrow">Área administrativa</p>
@@ -30,6 +45,15 @@
       <div class="stat-card"><span class="stat-label">Blocos pesquisáveis</span><strong id="stat-blocos">—</strong></div>
       <div class="stat-card"><span class="stat-label">Última atualização</span><strong id="stat-atualizacao">—</strong></div>
       <div class="stat-card"><span class="stat-label">Busca vetorial</span><strong id="stat-busca">—</strong></div>
+    </section>
+
+    <section class="card prompt-card" aria-labelledby="prompt-title">
+      <div class="section-heading compact"><div><p class="eyebrow">Comportamento do assistente</p><h2 id="prompt-title">Prompt do sistema</h2></div></div>
+      <p>Estas instruções são enviadas ao modelo em cada resposta. As alterações passam a valer imediatamente após salvar.</p>
+      <label for="prompt-sistema">Instruções do chatbot</label>
+      <textarea id="prompt-sistema" rows="11" minlength="20" maxlength="4000" spellcheck="true"></textarea>
+      <div class="prompt-actions"><small id="prompt-contagem">0 / 4000 caracteres</small><button id="salvar-prompt" class="primary-button compact-button" type="button" disabled>Salvar prompt</button></div>
+      <div id="prompt-feedback" class="feedback" role="status" aria-live="polite"></div>
     </section>
 
     <section class="card backend-card" aria-labelledby="backend-title">
@@ -83,11 +107,6 @@
             <label>Data de atualização <span>opcional</span><input id="atualizado-em" name="atualizado_em" type="date"></label>
           </div>
 
-          <div class="security-row">
-            <label class="key-field">Chave administrativa<input id="admin-key" type="password" autocomplete="off" placeholder="X-Admin-Key" required></label>
-            <p>Usada somente nesta sessão para autorizar o envio.</p>
-          </div>
-
           <div id="feedback" class="feedback" role="status" aria-live="polite"></div>
           <button id="enviar-arquivos" class="primary-button" type="submit" disabled>Enviar e indexar arquivos <span>→</span></button>
         </form>
@@ -104,7 +123,7 @@
         <ol class="steps">
           <li><span>1</span><div><strong>Envie o documento</strong><p>Escolha um ou mais arquivos oficiais da instituição.</p></div></li>
           <li><span>2</span><div><strong>O sistema organiza</strong><p>O arquivo é salvo com segurança e seus metadados entram no manifesto.</p></div></li>
-          <li><span>3</span><div><strong>A base é reindexada</strong><p>O conteúdo é dividido em trechos pesquisáveis automaticamente.</p></div></li>
+          <li><span>3</span><div><strong>O documento é indexado</strong><p>O conteúdo é dividido e atualizado sem apagar os demais documentos da base.</p></div></li>
           <li><span>4</span><div><strong>O chatbot responde</strong><p>As novas fontes ficam disponíveis nas próximas perguntas.</p></div></li>
         </ol>
         <div class="tip"><span>i</span><p>Prefira documentos oficiais e títulos claros. Eles ajudam o chatbot a apresentar fontes confiáveis.</p></div>
@@ -118,7 +137,8 @@
       </div>
       <div id="documentos" class="document-list"><div class="empty-state">Carregando documentos…</div></div>
     </section>
-    <footer>Os arquivos são processados pelo servidor local do chatbot. A chave administrativa nunca é salva no navegador.</footer>
+    <footer>Os arquivos são processados pelo servidor do chatbot. A sessão de administrador permanece ativa neste navegador por até 30 dias.</footer>
+    </div>
   </main>
   <script src="admin.js"></script>
 </body>
