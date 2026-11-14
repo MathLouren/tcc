@@ -59,6 +59,14 @@ _INSTRUCAO_SEM_PERGUNTAS = (
 )
 
 _SIGLAS_ACADEMICAS = {"AF", "AT", "AP", "AS", "V1", "V2", "VS", "R1", "R2"}
+# Frases que restringem ou excluem um caso da regra geral (texto já normalizado, sem acentos).
+_RE_RESTRICAO = re.compile(
+    r"\b(nao havera|nao sera|nao serao|nao podera|nao poderao|nao e permitid\w*|nao sao permitid\w*|"
+    r"nao e obrigatori\w*|nao se aplica\w*|nao isenta|nao substitui|nao e concedid\w*|exceto|salvo|"
+    r"vedad\w*|proibid\w*|em nenhuma hipotese)\b"
+)
+_COBERTURA_MINIMA_DA_RESTRICAO = 0.5  # parcela dos termos da pergunta que a frase de restrição precisa ter
+_MAX_RESTRICOES = 2
 # Avaliações exclusivas de cada modalidade: a sigla já define a modalidade.
 _SIGLAS_EAD = {"AF", "AT", "AP", "AS"}
 _SIGLAS_PRESENCIAL = {"V1", "V2", "VS", "R1", "R2"}
@@ -477,14 +485,26 @@ _RE_LINHA_COM_DATA = re.compile(
     r"^[✓•\-\s]*(\d{1,2})(?:\s*(?:a|e)\s*\d{1,2})?(?:\s+de\s+([a-zç]+)(?:\s+de\s+(20\d{2}))?)?\s*[–-]\s*(.+)$",
     re.IGNORECASE,
 )
-_RE_NOTA_AVALIACAO = re.compile(
-    r"(?<![\d.,])(\d{1,2}(?:[,.]\d{1,2})?)\s*(?:pontos?)?\s*(?:na|no|em|de)\s*(V1|VT|V2|R1)\b",
-    re.IGNORECASE,
-)
-_RE_NOTA_EAD = re.compile(
-    r"(?<![\d.,])(\d{1,2}(?:[,.]\d{1,2})?)\s*(?:pontos?)?\s*(?:na|no|em|de)\s*(AP|AF|AT)\b",
-    re.IGNORECASE,
-)
+_NOTA =r"(\d{1,2}(?:[,.]\d{1,2})?)(?!\d)"
+_CONECTOR_SIGLA_NOTA = r"\s*(?:=|:|igual a|foi|deu|de|com|(?:eu\s+)?(?:tirei|fiz|tive|peguei)(?:\s+nota)?)?\s*"
+
+
+def _notas_citadas(pergunta: str, siglas: tuple[str, ...]) -> dict[str, Decimal] | None:
+    """Notas que o aluno informou, em "9 na V1" ou em "V1 igual a 9" (também "V1 = 9", "V1: 9").
+
+    None quando a mesma avaliação aparece com dois valores diferentes: não adivinhar qual vale.
+    """
+    alternativas = "|".join(siglas)
+    nota_antes = re.compile(rf"(?<![\d.,]){_NOTA}\s*(?:pontos?)?\s*(?:na|no|em|de)\s*({alternativas})\b", re.IGNORECASE)
+    sigla_antes = re.compile(rf"\b({alternativas}){_CONECTOR_SIGLA_NOTA}{_NOTA}", re.IGNORECASE)
+    pares = [(s, v) for v, s in nota_antes.findall(pergunta)] + sigla_antes.findall(pergunta)
+    notas: dict[str, Decimal] = {}
+    for sigla, valor in pares:
+        sigla, valor = sigla.upper(), Decimal(valor.replace(",", "."))
+        if notas.get(sigla, valor) != valor:
+            return None
+        notas[sigla] = valor
+    return notas
 
 
 def _pt_decimal(valor: Decimal) -> str:
@@ -499,14 +519,8 @@ def _resposta_factual_de_notas_presenciais(pergunta: str, blocos: list[dict]) ->
         r"\b(media|passei|passo|aprovad[oa]|aprovacao|vs)\b", consulta
     ):
         return None
-    encontrados = _RE_NOTA_AVALIACAO.findall(pergunta)
-    notas: dict[str, Decimal] = {}
-    for valor, sigla in encontrados:
-        sigla = sigla.upper()
-        if sigla in notas:
-            return None  # duas notas para a mesma avaliação: não adivinhar qual vale
-        notas[sigla] = Decimal(valor.replace(",", "."))
-    if not {"V1", "VT", "V2"} <= notas.keys() or any(n < 0 or n > 10 for n in notas.values()):
+    notas = _notas_citadas(pergunta, ("V1", "VT", "V2", "R1"))
+    if notas is None or not {"V1", "VT", "V2"} <= notas.keys() or any(n < 0 or n > 10 for n in notas.values()):
         return None
 
     por_secao: dict[tuple[str, str], list[dict]] = {}
@@ -559,12 +573,74 @@ def _resposta_factual_de_notas_presenciais(pergunta: str, blocos: list[dict]) ->
     return None
 
 
+_RE_MEDIA_SEMESTRAL_INFORMADA = re.compile(
+    rf"\b(?:media semestral|media|ms)\s*(?:\(ms\)\s*)?(?:foi|era|deu|ficou(?: em)?|de|=|:|igual a)?\s*{_NOTA}"
+    rf"|(?<![\d.,]){_NOTA}\s*(?:de|na|no)\s*(?:media|ms)\b"
+)
+
+
+def _resposta_factual_de_vs(pergunta: str, blocos: list[dict]) -> tuple[str, list[dict]] | None:
+    """Resultado da VS (graduação presencial) a partir das notas informadas e das regras indexadas.
+
+    São duas condições, e o modelo costuma aplicar só a média: nota mínima de 5,0 na própria VS
+    e MF = (MS + VS)/2 de pelo menos 5,0. Com VS abaixo de 5,0 a resposta não depende da média.
+    """
+    consulta = _normalizar(pergunta)
+    if re.search(r"\b(ead|a distancia|semipresencial|pos|lato|stricto)\b", consulta):
+        return None
+    notas = _notas_citadas(pergunta, ("VS",))
+    if not notas or "VS" not in notas or not 0 <= notas["VS"] <= 10:
+        return None
+    vs = notas["VS"]
+    achada = _RE_MEDIA_SEMESTRAL_INFORMADA.search(consulta.replace("vs", " "))
+    ms = Decimal((achada.group(1) or achada.group(2)).replace(",", ".")) if achada else None
+    if ms is not None and not 4 <= ms < 7:
+        return None  # fora da faixa da VS: a pergunta tem outro problema, que o modelo explica melhor
+    if ms is None and vs >= 5:
+        return None  # aprovação depende da média, que não foi informada
+
+    por_secao: dict[tuple[str, str], list[dict]] = {}
+    for bloco in blocos:
+        por_secao.setdefault((bloco.get("arquivo", ""), bloco.get("secao", "")), []).append(bloco)
+    for grupo in por_secao.values():
+        def evidencia(frase: str) -> dict | None:
+            return next((b for b in grupo if frase in _normalizar(str(b.get("texto", "")))), None)
+
+        escopo = evidencia("nos cursos de graduacao presenciais")
+        minimo_vs = evidencia("aproveitamento inferior a 5,0 (cinco) na vs")
+        media_final = evidencia("(ms + vs)/2 e devera ser igual ou superior a 5,0")
+        if not all((escopo, minimo_vs, media_final)):
+            continue
+        usados = [escopo, minimo_vs, media_final]
+        partes = []
+        if ms is not None:
+            mf = (ms + vs) / 2
+            partes.append(
+                f"Média Final (MF) = (MS + VS) / 2 = ({_pt_decimal(ms)} + {_pt_decimal(vs)}) / 2 = {_pt_decimal(mf)}."
+            )
+        if vs < 5:
+            partes.append(
+                f"Não há aprovação: além da MF de pelo menos 5,0, o manual exige nota mínima de 5,0 na própria VS, "
+                f"e a sua foi {_pt_decimal(vs)}."
+            )
+        elif mf < 5:
+            partes.append("Não há aprovação: a MF precisa ser de pelo menos 5,0.")
+        else:
+            partes.append("Há aprovação: a nota na VS é de pelo menos 5,0 e a MF também.")
+            frequencia = evidencia("frequencia minima de 75%")
+            if frequencia:
+                partes.append("A aprovação também exige frequência mínima de 75%.")
+                usados.append(frequencia)
+        return " ".join(partes), [dict(b, similaridade=1.0) for b in dict((b["id"], b) for b in usados).values()]
+    return None
+
+
 def _resposta_factual_de_notas_ead(
     pergunta: str, conversa: list[tuple[str, str]], blocos: list[dict]
 ) -> tuple[str, list[dict]] | None:
     """Calcula MP e a nota mínima na AS a partir das notas do aluno e das regras indexadas."""
     normalizada = _normalizar(pergunta)
-    notas_na_pergunta = bool(_RE_NOTA_EAD.search(pergunta))
+    notas_na_pergunta = bool(_notas_citadas(pergunta, ("AP", "AF", "AT")))
     quer_nota_as = bool(re.search(r"\b(?:quanto|quantos|nota minima|qual nota)\b", normalizada)) or bool(
         re.search(r"\btirar quando\b", normalizada) and "aprovad" in normalizada
     )
@@ -577,13 +653,9 @@ def _resposta_factual_de_notas_ead(
     notas: dict[str, Decimal] = {}
     perguntas = [pergunta] + ([anterior for anterior, _ in reversed(conversa)] if quer_nota_as else [])
     for texto in perguntas:
-        encontradas = _RE_NOTA_EAD.findall(texto)
-        desta_pergunta: dict[str, Decimal] = {}
-        for valor, sigla in encontradas:
-            sigla = sigla.upper()
-            if sigla in desta_pergunta:
-                return None
-            desta_pergunta[sigla] = Decimal(valor.replace(",", "."))
+        desta_pergunta = _notas_citadas(texto, ("AP", "AF", "AT"))
+        if desta_pergunta is None:
+            return None
         if {"AP", "AF", "AT"} <= desta_pergunta.keys():
             notas = desta_pergunta
             break
@@ -1132,6 +1204,51 @@ class MotorRAG:
             partes.append(f"(Siglas nos documentos: {definicoes}.)")
         return "\n".join(parte for parte in partes if parte)
 
+    def _restricoes_para_o_modelo(self, pergunta: str, trechos: list[dict]) -> str:
+        """Frases de restrição dos trechos que tratam do caso perguntado, destacadas para o modelo.
+
+        Modelos pequenos aplicam a regra geral e passam por cima da exceção escrita logo abaixo
+        ("poderá requerer a 2ª chamada" x "Não haverá 2ª chamada para a VS e/ou R1"), mesmo com a
+        exceção no primeiro trecho.
+
+        Só vale para perguntas que citam uma avaliação (R1, VS...): a frase precisa citar essa avaliação
+        e tratar do assunto perguntado, cobrindo pelo menos metade dos demais termos da pergunta. Sem a
+        segunda condição, "quem pode fazer a R1?" recebia a restrição da 2ª chamada só por citar a R1.
+        Em perguntas gerais, sem avaliação citada, o destaque puxava a resposta para a exceção
+        ("como tranco a matrícula?" virava a condição de reprovação por frequência), então não há destaque.
+        """
+        lexico = getattr(self.indice, "lexico", None)
+        if lexico is None:
+            return ""
+        glossario = self._glossario()
+        siglas = {t.upper() for t in re.findall(r"\b[A-Za-z0-9]{2,6}\b", pergunta)
+                  if t.upper() in _SIGLAS_ACADEMICAS and (t.isupper() or t.lower() != "as")}
+        if not siglas:
+            return ""
+        # o assunto da pergunta, sem as siglas: é ele que a frase de restrição precisa cobrir
+        consulta = re.sub(rf"\b(?:{'|'.join(siglas)})\b", " ", pergunta, flags=re.IGNORECASE)
+        candidatas: dict[str, float] = {}
+        for trecho in trechos:
+            for linha in str(trecho.get("texto", "")).split("\n"):
+                linha = linha.strip(" -•\t")
+                normalizada = _normalizar(linha)
+                if len(linha) < 20 or not _RE_RESTRICAO.search(normalizada):
+                    continue
+                if any(not re.search(rf"\b{s.lower()}\b", normalizada)
+                       and _normalizar(glossario.get(s, s)) not in normalizada for s in siglas):
+                    continue
+                presentes, total = lexico.linhas_relevantes(consulta, [linha, consulta])
+                if total and presentes / total >= _COBERTURA_MINIMA_DA_RESTRICAO:
+                    candidatas[linha] = max(candidatas.get(linha, 0.0), presentes / total)
+        escolhidas = sorted(candidatas, key=candidatas.get, reverse=True)[:_MAX_RESTRICOES]
+        if not escolhidas:
+            return ""
+        frases = " ".join(f"“{linha}”" for linha in escolhidas)
+        citadas = ", ".join(sorted(siglas))
+        return (f"(Restrição nos trechos que se aplica a {citadas}: {frases} "
+                "Responda de acordo com essa restrição; ela prevalece sobre a regra geral. A restrição é a "
+                "informação pedida: não diga que a informação não foi localizada.)")
+
     def _citacao_do_documento(self, pergunta: str, trechos: list[dict]) -> tuple[str, list[dict]] | None:
         """Segunda leitura: o modelo aponta a frase e o código devolve o texto original do documento.
 
@@ -1231,7 +1348,8 @@ class MotorRAG:
         """Gera a resposta e aplica as proteções. Devolve (texto, modo, trechos)."""
         p = self.parametros
         pergunta_original = pergunta_modelo
-        dica = self._dicas_para_o_modelo(pergunta_modelo)
+        dica = "\n".join(d for d in (self._dicas_para_o_modelo(pergunta_modelo),
+                                     self._restricoes_para_o_modelo(pergunta_original, trechos)) if d)
         if dica:
             pergunta_modelo = f"{pergunta_modelo}\n{dica}"
         mensagens = self.montar_mensagens(pergunta_modelo, trechos, historico)
@@ -1333,6 +1451,10 @@ class MotorRAG:
         factual_notas = _resposta_factual_de_notas_presenciais(pergunta_modelo, self.indice.blocos)
         if factual_notas:
             return self._resposta_validada(sessao_id, pergunta_guardada, *factual_notas, inicio)
+
+        factual_vs = _resposta_factual_de_vs(pergunta_modelo, self.indice.blocos)
+        if factual_vs:
+            return self._resposta_validada(sessao_id, pergunta_guardada, *factual_vs, inicio)
 
         factual_ead = _resposta_factual_de_notas_ead(pergunta_modelo, conversa, self.indice.blocos)
         if factual_ead:

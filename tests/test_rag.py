@@ -399,3 +399,112 @@ def test_verificacao_de_numeros_so_olha_datas_e_valores_em_reais():
     assert _numeros_sem_apoio("Você pode faltar até 25% das aulas. A média seria 5,9.", apoio) == set()
     assert _numeros_sem_apoio("Abre em 14 de setembro, de 09 de novembro até 28, multa de R$ 3,00, portaria de 10/09.", apoio) == set()
     assert _numeros_sem_apoio("Abre em 14 de outubro e a multa é R$ 5,00.", apoio) == {"14/10", "R$5"}
+
+
+MANUAL_VS = (
+    "# Manual do Aluno\n\n## Avaliação do rendimento escolar\n"
+    "§ 1º Nos cursos de Graduação Presenciais serão observados os seguintes critérios:\n"
+    "a. MS = [(V1 × 2) + VT + (V2 × 2)]/5;\n"
+    "b. Se a Média Semestral for igual ou superior a 7,0, o aluno será aprovado diretamente.\n"
+    "c. Caso MS seja inferior a 4,0, o aluno estará reprovado por média.\n"
+    "d. Se MS for igual ou superior a 4,0 e inferior a 7,0, deverá prestar a VS.\n"
+    "- O aluno não poderá apresentar aproveitamento inferior a 5,0 (cinco) na VS;\n"
+    "- A Média Final (MF) para o aluno que realizar a VS será calculada como (MS + VS)/2 e deverá ser "
+    "igual ou superior a 5,0 (cinco) para que o estudante seja aprovado.\n"
+    "É exigida frequência mínima de 75%.\n"
+)
+
+
+def _servico_com(ambiente, texto):
+    (ambiente.docs_dir / "manual.md").write_text(texto, encoding="utf-8")
+    llm = LLMFalso(resposta="Não localizei essa informação.")
+    return Servico(ambiente, embedder=EmbedderFalso(), llm=llm), llm
+
+
+def test_notas_com_a_sigla_antes_do_valor(ambiente):
+    servico, llm = _servico_com(ambiente, MANUAL_VS)
+    resposta = servico.motor.responder("V1 = 5, VT: 7 e na V2 eu tirei 8. Qual a minha média?")
+    assert resposta.modo == "validado" and "6,6" in resposta.resposta
+    assert llm.chamadas == []
+
+
+def test_mesma_avaliacao_com_dois_valores_nao_e_calculada(ambiente):
+    servico, _ = _servico_com(ambiente, MANUAL_VS)
+    resposta = servico.motor.responder("fiz 4 na V1, depois na V1 tirei 6, VT 7 e V2 8. passei?")
+    assert resposta.modo != "validado"
+
+
+def test_vs_abaixo_de_5_reprova_mesmo_com_media_final_5(ambiente):
+    """A MF pode chegar a 5,0 com a VS abaixo de 5,0: as duas condições valem."""
+    servico, llm = _servico_com(ambiente, MANUAL_VS)
+    resposta = servico.motor.responder("minha média ficou em 5,5 e na VS tirei 4,5, passei?")
+    assert resposta.modo == "validado"
+    assert "= 5." in resposta.resposta and "Não há aprovação" in resposta.resposta
+    assert "nota mínima de 5,0 na própria VS" in resposta.resposta
+    assert llm.chamadas == []
+
+
+def test_vs_abaixo_de_5_reprova_sem_precisar_da_media(ambiente):
+    servico, _ = _servico_com(ambiente, MANUAL_VS)
+    resposta = servico.motor.responder("tirei 3 na VS, passo?")
+    assert resposta.modo == "validado" and "Não há aprovação" in resposta.resposta
+
+
+def test_vs_aprovada_quando_as_duas_condicoes_valem(ambiente):
+    servico, _ = _servico_com(ambiente, MANUAL_VS)
+    resposta = servico.motor.responder("MS 6 e VS 7, fui aprovado?")
+    assert resposta.modo == "validado" and "6,5" in resposta.resposta and "Há aprovação" in resposta.resposta
+
+
+def test_vs_sem_media_e_com_nota_suficiente_segue_para_o_modelo(ambiente):
+    """Com VS de 5,0 ou mais, o resultado depende da média: o código não adivinha."""
+    servico, _ = _servico_com(ambiente, MANUAL_VS)
+    assert servico.motor.responder("tirei 8 na VS, passo?").modo != "validado"
+
+
+def test_vs_sem_as_regras_no_manual_nao_e_calculada(ambiente):
+    servico, _ = _servico_com(ambiente, MANUAL_VS.split("- O aluno não poderá")[0])
+    assert servico.motor.responder("minha média foi 6 e tirei 4 na VS, passei?").modo != "validado"
+
+
+MANUAL_SEGUNDA_CHAMADA = (
+    "# Manual do Aluno\n\n## Avaliação do rendimento escolar\n"
+    "§ 1º Nos cursos de Graduação Presenciais:\n"
+    "d) As avaliações de 2ª chamada serão realizadas em data única, após a aplicação da avaliação V2, "
+    "sendo destinada ao aluno que tiver perdido uma ou mais das avaliações (V1 ou V2).\n"
+    "e) O aluno deverá solicitar a 2ª chamada em até dois dias após a avaliação na qual esteve ausente.\n"
+    "g) Não haverá 2ª chamada para a Verificação Suplementar e/ou R1;\n"
+    "VS = Verificação Suplementar.\n"
+)
+
+
+def _pergunta_enviada(llm):
+    return llm.chamadas[0]["mensagens"][-1]["content"]
+
+
+def test_restricao_que_cita_a_avaliacao_perguntada_e_destacada_com_firmeza(ambiente):
+    servico, llm = _servico_com(ambiente, MANUAL_SEGUNDA_CHAMADA)
+    servico.motor.responder("faltei na R1, posso fazer 2ª chamada?")
+    enviada = _pergunta_enviada(llm)
+    assert "Restrição nos trechos que se aplica a R1" in enviada
+    assert "Não haverá 2ª chamada para a Verificação Suplementar e/ou R1" in enviada
+
+
+def test_restricao_nao_e_destacada_para_avaliacao_que_ela_nao_cita(ambiente):
+    servico, llm = _servico_com(ambiente, MANUAL_SEGUNDA_CHAMADA)
+    servico.motor.responder("faltei na V1, posso fazer 2ª chamada?")
+    assert "Restrição nos trechos" not in _pergunta_enviada(llm)
+
+
+def test_pergunta_geral_sem_avaliacao_citada_nao_recebe_restricao(ambiente):
+    """Em pergunta geral o destaque puxava a resposta para a exceção."""
+    servico, llm = _servico_com(ambiente, MANUAL_SEGUNDA_CHAMADA)
+    servico.motor.responder("como funciona a 2ª chamada?")
+    assert "Restrição nos trechos" not in _pergunta_enviada(llm)
+
+
+def test_restricao_nao_e_destacada_quando_a_pergunta_e_sobre_outro_assunto_da_avaliacao(ambiente):
+    """Citar a R1 não basta: "quem pode fazer a R1?" não é sobre 2ª chamada."""
+    servico, llm = _servico_com(ambiente, MANUAL_SEGUNDA_CHAMADA)
+    servico.motor.responder("quem pode fazer a R1?")
+    assert "Restrição nos trechos" not in _pergunta_enviada(llm)

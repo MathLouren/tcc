@@ -822,5 +822,17 @@
    "veredito": "recusa_correta",
    "observacao": ""
   }
- ]
+ ],
+ "contaminacao": {
+  "perguntas": [
+   "MIA-052",
+   "MIA-053"
+  ],
+  "detalhe": "Aparecem com a mesma redação em tests/test_rag.py, escrito antes do congelamento: a calculadora de notas foi construída com elas. Para o número de teste, excluir as duas.",
+  "resultado_sem_contaminadas": {
+   "respondiveis": 59,
+   "certas": 53,
+   "percentual": 89.8
+  }
+ }
 }
