@@ -18,16 +18,32 @@ _ORDINAIS = {
     "primeiro": 1, "segundo": 2, "terceiro": 3, "quarto": 4,
     "quinto": 5, "sexto": 6, "setimo": 7, "oitavo": 8,
 }
-_RE_FORA_DO_ASSUNTO = re.compile(r"\b(prova|provas|avaliacao|avaliacoes|nota|notas|quando|data|datas|prazo)\b")
+# Assuntos que a tabela da matriz não tem: a pergunta segue para o RAG, que recusa ou busca no manual.
+# Antes, "quem é o professor de N098?" recebia "N098 corresponde a Inteligência Artificial".
+_RE_FORA_DO_ASSUNTO = re.compile(
+    r"\b(prova|provas|avaliacao|avaliacoes|nota|notas|quando|data|datas|prazo|professor\w*|docentes?|"
+    r"ementas?|conteudos?|programatico|horarios?|dias? da semana|turmas?|salas?|temas?|empresas?|"
+    r"mensalidades?|valor|online|modalidade|ead|presencial|legenda|significa\w*)\b"
+)
 _RE_ASSUNTO_DISCIPLINAS = re.compile(r"\b(disciplinas?|materias?|cadeiras?|componentes?|estud\w+|grade)\b")
 _RE_QUANTIDADE = re.compile(r"\b(quantas|quantos|numero|total)\b")
 _RE_ENUMERACAO = re.compile(r"\b(quais|liste|listar|lista|cite|citar|mostre|mostrar|relacione|nomes?)\b")
 _RE_HORAS = re.compile(r"\b(horas|carga horaria|carga)\b")
-_RE_DEPENDENTES = re.compile(r"\b(dependem|prende|prendem|libera|liberam)\b")
+# Pedem as disciplinas que exigem a citada: "quais exigem N303", "dependentes de N014", "têm N014 como pré-requisito".
+_RE_DEPENDENTES = re.compile(
+    r"\b(dependem|dependentes?|prende|prendem|libera|liberam|exigem|exige|como pre.?requisitos?)\b"
+)
 _RE_REQUISITO = re.compile(r"\b(pre.?requisitos?|requisitos?|depende|para cursar|para fazer|preciso ter|precisa ter|antes de)\b")
 _RE_PERGUNTA_PERIODO = re.compile(r"\b(periodo|semestre)\b")
 _RE_CREDITOS = re.compile(r"\bcreditos?\b")
-_RE_PERGUNTA_CODIGO = re.compile(r"\b(codigo|disciplina|materia|o que e|qual e|qual)\b")
+_RE_PERGUNTA_CODIGO = re.compile(r"\b(codigo|o que e|que disciplina|qual (?:e )?(?:a )?(?:disciplina|materia))\b")
+_RE_MARCACAO = re.compile(r"\(ol\)|\bol\b|\bmarcad[oa]s?\b|\bmarcacao\b")
+_RE_AULAS_SEMANAIS = re.compile(r"\baulas? (?:semanais|por semana)\b")
+_RE_COMPARACAO = re.compile(r"\b(a mais|a menos|diferenca|comparacao|comparad[oa]|em relacao)\b")
+_RE_SOMA = re.compile(r"\b(soma|somando|somadas?|total|distribuidas?|juntos?|juntas?)\b")
+_RE_MAIOR_MENOR = re.compile(r"\b(maior|menor|mais pesado|mais leve)\b")
+_RE_MESMA = re.compile(r"\b(mesma|mesmas|igual|iguais)\b")
+_NUMEROS_POR_EXTENSO = {"dois": 2, "duas": 2, "tres": 3, "quatro": 4, "cinco": 5, "seis": 6, "sete": 7, "oito": 8}
 
 
 @dataclass(frozen=True)
@@ -38,6 +54,7 @@ class Disciplina:
     horas: str
     creditos: str
     requisitos: tuple[str, ...]
+    marcacao: str = ""
 
 
 def _normalizar(texto: str) -> str:
@@ -90,21 +107,43 @@ def _ler_disciplinas(blocos: list[dict]) -> tuple[list[Disciplina], dict[int, di
                 horas=campo("carga"),
                 creditos=campo("credito"),
                 requisitos=tuple(_RE_CODIGO.findall(campo("requisito"))),
+                marcacao="" if campo("marcacao") in {"", "—", "-"} else campo("marcacao"),
             ))
     return list(disciplinas.values()), por_periodo
 
 
-def _periodo_da_pergunta(normalizada: str) -> int | None:
-    if re.search(r"\b20\d{2}\b", normalizada):  # "2º semestre de 2026" é semestre letivo, não período do curso
-        return None
-    encontrado = (
-        re.search(r"\b([1-9])\s*(?:o|°)?\s*(?:periodo|semestre)\b", normalizada)
-        or re.search(r"\b(?:periodo|semestre)\s+([1-9])\b", normalizada)
-    )
-    if encontrado:
-        return int(encontrado.group(1))
-    ordinal = re.search(rf"\b({'|'.join(_ORDINAIS)})\s+(?:periodo|semestre)\b", normalizada)
-    return _ORDINAIS[ordinal.group(1)] if ordinal else None
+def _resumo_por_periodo(blocos: list[dict]) -> tuple[dict[int, dict[str, int]], dict | None]:
+    """Tabela "Resumo da carga horária por período": {período: {carga, aulas, complementares, total}}."""
+    resumo = next((b for b in blocos if str(b.get("secao", "")).startswith("Resumo da carga horária")), None)
+    linhas: dict[int, dict[str, int]] = {}
+    for achado in re.finditer(r"^(\d+)º período\s*\|(.+)$", str((resumo or {}).get("texto", "")), re.MULTILINE):
+        numeros = [re.sub(r"\D", "", c) for c in achado.group(2).split("|")]
+        if len(numeros) >= 4 and all(numeros[:4]):
+            carga, aulas, complementares, total = (int(n) for n in numeros[:4])
+            linhas[int(achado.group(1))] = {"carga": carga, "aulas": aulas, "complementares": complementares, "total": total}
+    return linhas, resumo
+
+
+def _periodos_citados(normalizada: str, total: int) -> list[int]:
+    """Todos os períodos citados: "6º, 7º e 8º", "do 1º ao 8º", "cinco primeiros", "todos os períodos"."""
+    if re.search(r"\b20\d{2}\b", normalizada) or not re.search(r"\b(periodos?|semestres?)\b", normalizada):
+        return []
+    periodos: set[int] = set()
+    intervalo = re.search(r"\bdo\s+([1-9])\s*o?\s*(?:periodo\s+)?(?:ao|a|ate o)\s+([1-9])\s*o?\b", normalizada)
+    if intervalo:
+        inicio, fim = sorted(int(n) for n in intervalo.groups())
+        periodos.update(range(inicio, fim + 1))
+    primeiros = re.search(rf"\b([1-9]|{'|'.join(_NUMEROS_POR_EXTENSO)})\s+(primeiros|ultimos)\s+(?:periodos|semestres)\b", normalizada)
+    if primeiros:
+        n = int(primeiros.group(1)) if primeiros.group(1).isdigit() else _NUMEROS_POR_EXTENSO[primeiros.group(1)]
+        periodos.update(range(1, n + 1) if primeiros.group(2) == "primeiros" else range(total - n + 1, total + 1))
+    if re.search(r"\btodos os (?:periodos|semestres)\b|\bcada periodo\b", normalizada) and total:
+        periodos.update(range(1, total + 1))
+    periodos.update(int(n) for n in re.findall(r"\b([1-9])\s*(?:o|°)(?![a-z])", normalizada))
+    periodos.update(int(n) for n in re.findall(r"\b([1-9])\s*(?:periodo|semestre)\b", normalizada))
+    periodos.update(int(n) for n in re.findall(r"\b(?:periodo|semestre)\s+([1-9])\b", normalizada))
+    periodos.update(_ORDINAIS[o] for o in re.findall(rf"\b({'|'.join(_ORDINAIS)})\b", normalizada))
+    return sorted(p for p in periodos if not total or 1 <= p <= total)
 
 
 def _tokens_da_pergunta(normalizada: str) -> list[str]:
@@ -137,18 +176,32 @@ def _contem_sequencia(tokens: list[str], sequencia: list[str]) -> bool:
     return any(tokens[i:i + tamanho] == sequencia for i in range(len(tokens) - tamanho + 1))
 
 
-def _disciplina_citada(normalizada: str, disciplinas: list[Disciplina]) -> Disciplina | None:
+def _disciplinas_citadas(normalizada: str, disciplinas: list[Disciplina]) -> list[Disciplina]:
+    """Todas as disciplinas citadas por código ou por nome, sem repetir a mesma disciplina."""
     por_codigo = {d.codigo.lower(): d for d in disciplinas}
-    for token in re.findall(r"[a-z]{1,3}\d{2,4}", normalizada):
-        if token in por_codigo:
-            return por_codigo[token]
+    citadas = {por_codigo[t].codigo: por_codigo[t] for t in re.findall(r"[a-z]{1,3}\d{2,4}", normalizada) if t in por_codigo}
     tokens = _tokens_da_pergunta(normalizada)
-    melhor, tamanho_melhor = None, 0
     for disciplina in disciplinas:
-        for variante in _variantes_do_nome(disciplina.nome):
-            if len(variante) > tamanho_melhor and _contem_sequencia(tokens, variante):
-                melhor, tamanho_melhor = disciplina, len(variante)
-    return melhor
+        if any(_contem_sequencia(tokens, v) for v in _variantes_do_nome(disciplina.nome)):
+            citadas.setdefault(disciplina.codigo, disciplina)
+    # Um nome pode estar dentro de outro mais longo também citado: fica só o mais longo. A comparação é
+    # por palavras ("i" e "ii" são palavras diferentes), não por texto.
+    nomes = {c: _tokens(d.nome) for c, d in citadas.items()}
+    return [d for c, d in citadas.items()
+            if not any(o != c and len(nomes[o]) > len(nomes[c]) and _contem_sequencia(nomes[o], nomes[c])
+                       for o in citadas)]
+
+
+def _posicao_da_disciplina(normalizada: str, d: Disciplina) -> int:
+    """Onde a disciplina aparece na pergunta (código ou primeira palavra do nome); -1 se não achar."""
+    posicao = normalizada.find(d.codigo.lower())
+    if posicao >= 0:
+        return posicao
+    for variante in _variantes_do_nome(d.nome):
+        achado = re.search(r"\b" + r"\W+(?:\w+\W+){0,2}".join(map(re.escape, variante)), normalizada)
+        if achado:
+            return achado.start()
+    return -1
 
 
 def _rotulo_disciplina(d: Disciplina) -> str:
@@ -163,6 +216,15 @@ def _item_lista(d: Disciplina) -> str:
 def _resposta_periodo(numero, normalizada, disciplinas, por_periodo, blocos):
     do_periodo = [d for d in disciplinas if d.periodo == numero]
     if not do_periodo or _RE_FORA_DO_ASSUNTO.search(normalizada):
+        return None
+    # Pré-requisito ou marcação dentro de um período não é pedido de lista do período.
+    if _RE_REQUISITO.search(normalizada) or _RE_DEPENDENTES.search(normalizada) or _RE_MARCACAO.search(normalizada):
+        return None
+
+    if _RE_AULAS_SEMANAIS.search(normalizada):
+        linhas, resumo = _resumo_por_periodo(blocos)
+        if numero in linhas:
+            return f"Na {_ROTULO}, o {numero}º período tem {linhas[numero]['aulas']} aulas semanais.", [resumo]
         return None
 
     if _RE_HORAS.search(normalizada):
@@ -179,7 +241,8 @@ def _resposta_periodo(numero, normalizada, disciplinas, por_periodo, blocos):
                 )
         return None
 
-    if _RE_QUANTIDADE.search(normalizada):
+    # "quantas aulas semanais?" não é "quantas disciplinas?": a contagem exige o assunto disciplinas
+    if _RE_QUANTIDADE.search(normalizada) and _RE_ASSUNTO_DISCIPLINAS.search(normalizada):
         lista = "\n".join(_item_lista(d) for d in do_periodo)
         return (
             f"O {numero}º período da {_ROTULO} tem {len(do_periodo)} componentes curriculares:\n{lista}",
@@ -192,11 +255,30 @@ def _resposta_periodo(numero, normalizada, disciplinas, por_periodo, blocos):
     return None
 
 
+def _pede_dependentes(normalizada: str, d: Disciplina) -> bool:
+    """A pergunta quer as disciplinas que exigem d (e não os pré-requisitos de d)?
+
+    "prende/libera/dependem de" sempre apontam para as dependentes. Nos demais, a ordem decide:
+    "quais exigem N303?" (verbo antes) x "o que N535 exige?" (verbo depois); "quais têm N014 como
+    pré-requisito?" (disciplina antes da expressão).
+    """
+    if re.search(r"\b(dependem|prende|prendem|libera|liberam|dependentes?)\b", normalizada):
+        return True
+    posicao = _posicao_da_disciplina(normalizada, d)
+    exige = re.search(r"\bexigem?\b", normalizada)
+    if exige and 0 <= exige.start() < posicao:
+        return True
+    como = re.search(r"\bcomo pre.?requisitos?\b", normalizada)
+    return bool(como and 0 <= posicao < como.start())
+
+
 def _resposta_disciplina(d, normalizada, disciplinas, por_periodo):
     por_codigo = {x.codigo: x for x in disciplinas}
     bloco = [por_periodo[d.periodo]]
+    if _RE_FORA_DO_ASSUNTO.search(normalizada) or _RE_MARCACAO.search(normalizada):
+        return None
 
-    if _RE_DEPENDENTES.search(normalizada):
+    if _pede_dependentes(normalizada, d):
         dependentes = [x for x in disciplinas if d.codigo in x.requisitos]
         if not dependentes:
             return f"A {_ROTULO} não indica disciplinas que dependam de {_rotulo_disciplina(d)}.", bloco
@@ -204,7 +286,7 @@ def _resposta_disciplina(d, normalizada, disciplinas, por_periodo):
         blocos = [por_periodo[n] for n in dict.fromkeys(x.periodo for x in dependentes)]
         return f"Na {_ROTULO}, dependem de {_rotulo_disciplina(d)}:\n{lista}", blocos
 
-    if _RE_REQUISITO.search(normalizada):
+    if _RE_REQUISITO.search(normalizada) or re.search(r"\bexigem?\b", normalizada):
         if not d.requisitos:
             return f"A {_ROTULO} não indica pré-requisito para {_rotulo_disciplina(d)}.", bloco
         lista = "\n".join(
@@ -218,9 +300,128 @@ def _resposta_disciplina(d, normalizada, disciplinas, por_periodo):
         return f"Na {_ROTULO}, {_rotulo_disciplina(d)} tem carga horária de {d.horas}.", bloco
     if _RE_PERGUNTA_PERIODO.search(normalizada):
         return f"Na {_ROTULO}, {_rotulo_disciplina(d)} é do {d.periodo}º período.", bloco
-    if re.search(r"\b[a-z]{1,3}\d{2,4}\b", normalizada) and _RE_PERGUNTA_CODIGO.search(normalizada):
+    tem_codigo = re.search(r"\b[a-z]{1,3}\d{2,4}\b", normalizada)
+    if (tem_codigo and _RE_PERGUNTA_CODIGO.search(normalizada)) or re.search(r"\bcodigo\b", normalizada):
         return f"Na {_ROTULO}, o código {d.codigo} corresponde a {d.nome} ({d.periodo}º período).", bloco
     return None
+
+
+def _quantas(n: int, singular: str, plural: str) -> str:
+    """"1 disciplina tem", "7 disciplinas têm"."""
+    return f"{n} {singular if n == 1 else plural}"
+
+
+def _lista_curta(itens: list[Disciplina], com_periodo: bool = True) -> str:
+    return "\n".join(f"- {_rotulo_disciplina(d)}" + (f" ({d.periodo}º período)" if com_periodo else "") for d in itens)
+
+
+def _resposta_marcacao(normalizada, disciplinas, por_periodo, periodos):
+    """Disciplinas com a marcação (OL) do fluxograma: lista, contagem ou presença num período."""
+    marcadas = [d for d in disciplinas if d.marcacao]
+    if not marcadas:
+        return None
+    sem_legenda = "O documento não traz a legenda dessa marcação."
+    if periodos:
+        nos_periodos = [d for d in marcadas if d.periodo in periodos]
+        nomes = " e ".join(f"{p}º" for p in periodos)
+        blocos = [por_periodo[p] for p in periodos if p in por_periodo]
+        if not nos_periodos:
+            return f"Não. Na {_ROTULO}, nenhuma disciplina do {nomes} período tem a marcação (OL).", blocos
+        quantas = _quantas(len(nos_periodos), "disciplina", "disciplinas")
+        verbo = "tem" if len(nos_periodos) == 1 else "têm"
+        return (f"Sim. Na {_ROTULO}, {quantas} do {nomes} período {verbo} a marcação (OL):\n"
+                f"{_lista_curta(nos_periodos)}\n{sem_legenda}", blocos)
+    blocos = [por_periodo[n] for n in dict.fromkeys(d.periodo for d in marcadas)]
+    quantas = _quantas(len(marcadas), "disciplina tem", "disciplinas têm")
+    return f"Na {_ROTULO}, {quantas} a marcação (OL):\n{_lista_curta(marcadas)}\n{sem_legenda}", blocos
+
+
+def _resposta_por_periodos(normalizada, periodos, blocos):
+    """Aulas semanais e carga de disciplinas comparadas, somadas ou ordenadas entre períodos."""
+    aulas = bool(_RE_AULAS_SEMANAIS.search(normalizada))
+    if not aulas and not _RE_HORAS.search(normalizada):
+        return None
+    linhas, resumo = _resumo_por_periodo(blocos)
+    if not linhas:
+        return None
+    pede_complementares = re.search(r"\batividades? complementar", normalizada) and not re.search(
+        r"\b(sem (?:contar )?(?:as )?|antes das? |excluindo (?:as )?)atividades? complementar", normalizada)
+    campo = "aulas" if aulas else ("complementares" if pede_complementares else "carga")
+    unidade = {"aulas": " aulas semanais", "complementares": " h de atividades complementares",
+               "carga": " h de disciplinas (sem as atividades complementares)"}[campo]
+    valor = {p: linhas[p][campo] for p in linhas}
+    escolhidos = [p for p in periodos if p in valor] or sorted(valor)
+    detalhe = "; ".join(f"{p}º: {valor[p]}" for p in escolhidos)
+
+    if _RE_MAIOR_MENOR.search(normalizada) and len(periodos) != 1:
+        maior = "menor" not in normalizada and "mais leve" not in normalizada
+        alvo = (max if maior else min)(valor[p] for p in escolhidos)
+        quais = [p for p in escolhidos if valor[p] == alvo]
+        texto = " e ".join(f"{p}º" for p in quais)
+        return (f"Na {_ROTULO}, a {'maior' if maior else 'menor'} carga é a do {texto} período, com {alvo}{unidade}. "
+                f"Por período: {detalhe}.", [resumo])
+    if len(periodos) < 2:
+        return None
+    if _RE_COMPARACAO.search(normalizada) and len(periodos) == 2:
+        a, b = periodos
+        diferenca = abs(valor[a] - valor[b])
+        mais, menos = (a, b) if valor[a] >= valor[b] else (b, a)
+        return (f"Na {_ROTULO}, o {mais}º período tem {valor[mais]}{unidade} e o {menos}º tem {valor[menos]}: "
+                f"{valor[mais]} − {valor[menos]} = {diferenca} a mais no {mais}º período.", [resumo])
+    if _RE_MESMA.search(normalizada):
+        iguais = len({valor[p] for p in escolhidos}) == 1
+        return (f"{'Sim' if iguais else 'Não'}. Na {_ROTULO}: {detalhe}{unidade}.", [resumo])
+    if not _RE_SOMA.search(normalizada):  # "quantas aulas tem cada período?": um valor por período
+        return f"Na {_ROTULO}, por período: {detalhe}{unidade}.", [resumo]
+    soma = sum(valor[p] for p in escolhidos)
+    conta = " + ".join(str(valor[p]) for p in escolhidos)
+    contiguos = escolhidos == list(range(escolhidos[0], escolhidos[-1] + 1))
+    quais = (f"do {escolhidos[0]}º ao {escolhidos[-1]}º período" if contiguos
+             else "dos períodos " + ", ".join(f"{p}º" for p in escolhidos))
+    return f"Na {_ROTULO}, a soma {quais} é {conta} = {soma}{unidade}.", [resumo]
+
+
+# Pergunta sobre a ligação entre duas disciplinas: "preciso concluir X antes de Y?", "o que liga X a Y?"
+_RE_RELACAO = re.compile(
+    r"\b(pre.?requisitos?|requisitos?|antes|depois|liga|ligacao|relacao|obrigatori\w*|precis\w+ (?:ter )?"
+    r"(?:concluir|concluido|cursar|cursado|fazer|feito)|(?:pra|para) (?:cursar|fazer)|depende|exige)\b"
+)
+
+
+def _resposta_relacao(citadas, por_periodo):
+    """Se uma das duas disciplinas é pré-requisito da outra, segundo a coluna de pré-requisitos.
+
+    Sem este cálculo, o modelo afirmou que N476 é pré-requisito de N239, o que a matriz não registra.
+    """
+    a, b = citadas
+    blocos = [por_periodo[n] for n in dict.fromkeys((a.periodo, b.periodo))]
+    for anterior, posterior in ((a, b), (b, a)):
+        if anterior.codigo in posterior.requisitos:
+            return (f"Na {_ROTULO}, {_rotulo_disciplina(anterior)} ({anterior.periodo}º período) é pré-requisito de "
+                    f"{_rotulo_disciplina(posterior)} ({posterior.periodo}º período): é preciso cursar "
+                    f"{anterior.codigo} antes de {posterior.codigo}.", blocos)
+    return (f"A {_ROTULO} não registra pré-requisito entre {_rotulo_disciplina(a)} ({a.periodo}º período) e "
+            f"{_rotulo_disciplina(b)} ({b.periodo}º período), em nenhum dos dois sentidos.", blocos)
+
+
+def _resposta_por_carga(normalizada, disciplinas, por_periodo):
+    """Disciplinas agrupadas pela carga horária citada: "quais têm 180 horas?", "quantas têm 80 h?"."""
+    cargas = [int(n) for n in re.findall(r"\b(\d{2,3})\s*h(?:oras)?\b", normalizada)]
+    if not cargas or not _RE_ASSUNTO_DISCIPLINAS.search(normalizada):
+        return None
+    partes, usados = [], []
+    for carga in dict.fromkeys(cargas):
+        achadas = [d for d in disciplinas if re.sub(r"\D", "", d.horas) == str(carga)]
+        usados += [por_periodo[d.periodo] for d in achadas]
+        if not achadas:
+            partes.append(f"Nenhum componente tem {carga} horas.")
+        elif len(achadas) > 6:
+            partes.append(f"{_quantas(len(achadas), 'componente tem', 'componentes têm')} {carga} horas.")
+        else:
+            partes.append(f"{_quantas(len(achadas), 'componente tem', 'componentes têm')} {carga} horas:\n"
+                          f"{_lista_curta(achadas)}")
+    blocos = list({id(b): b for b in usados}.values())
+    return f"Na {_ROTULO}:\n" + "\n".join(partes), blocos
 
 
 _RE_OUTRO_ASSUNTO_DE_HORAS = re.compile(
@@ -229,7 +430,10 @@ _RE_OUTRO_ASSUNTO_DE_HORAS = re.compile(
 )
 _RE_PEDE_HORAS = re.compile(r"\b(quantas horas|carga horaria|total de horas|horas (?:tem|sao|preciso|precisa)|minimo de horas)\b")
 _RE_DURACAO = re.compile(r"\b(quanto tempo|duracao|dura|quantos periodos|quantos semestres|quantos anos)\b")
-_RE_CURSO_DA_MATRIZ = re.compile(r"\b(sistemas de informacao|meu curso|do curso|o curso)\b")
+# "nesse fluxograma", "no currículo", "da grade": formas de citar a própria matriz
+_RE_CURSO_DA_MATRIZ = re.compile(
+    r"\b(sistemas de informacao|meu curso|do curso|o curso|fluxograma|curriculo|grade|matriz|109an)\b"
+)
 
 
 def _resposta_totais(normalizada: str, blocos: list[dict], periodos: int):
@@ -259,7 +463,10 @@ def _resposta_totais(normalizada: str, blocos: list[dict], periodos: int):
                 "divididas entre o Estágio Supervisionado I e o Estágio Supervisionado II.",
                 [totais],
             )
-    if not _RE_CURSO_DA_MATRIZ.search(normalizada) or re.search(r"\b(estagios?|complementar(?:es)?|optativas?)\b", normalizada):
+    # Uma categoria da totalização (teóricas, práticas...) não é o total do curso.
+    if not _RE_CURSO_DA_MATRIZ.search(normalizada) or re.search(
+        r"\b(estagios?|complementar(?:es)?|optativas?|teoricas?|praticas?|pesquisa|projetos?)\b", normalizada
+    ):
         return None
     total = linha("HORAS CUMPRIDAS")
     if totais and total and (pede_horas or re.search(r"\b(quantos creditos|total de creditos)\b", normalizada)):
@@ -285,17 +492,37 @@ def responder_consulta_matriz(pergunta: str, blocos: list[dict]) -> tuple[str, l
     if not disciplinas:
         return None
 
-    numero = _periodo_da_pergunta(normalizada)
+    if _RE_FORA_DO_ASSUNTO.search(normalizada):
+        return None
+    periodos = _periodos_citados(normalizada, len(por_periodo))
+    citadas = _disciplinas_citadas(normalizada, disciplinas)
     resultado = None
-    if numero is not None:
-        resultado = _resposta_periodo(numero, normalizada, disciplinas, por_periodo, matriz)
+    if _RE_MARCACAO.search(normalizada):
+        resultado = _resposta_marcacao(normalizada, disciplinas, por_periodo, periodos)
+    elif por_periodos := _resposta_por_periodos(normalizada, periodos, matriz):
+        resultado = por_periodos
+    elif not periodos and (por_carga := _resposta_por_carga(normalizada, disciplinas, por_periodo)):
+        resultado = por_carga
+    elif re.search(r"\bcodigo d[oa] (?:curriculo|matriz|grade)\b|\bqual (?:e )?o curriculo\b", normalizada):
+        bloco = next((b for b in matriz if re.search(r"curr[ií]culo:\s*109an", str(b.get("texto", "")), re.I)), None)
+        if bloco:
+            resultado = "O fluxograma de Sistemas de Informação corresponde ao currículo 109AN.", [bloco]
+    elif len(citadas) == 2 and _RE_RELACAO.search(normalizada):
+        resultado = _resposta_relacao(citadas, por_periodo)
+    elif len(periodos) > 1 or len(citadas) > 1:
+        # Respostas prontas são para uma entidade só; comparar períodos ou relacionar disciplinas fica
+        # com o RAG. Antes, "6º em relação ao 5º" recebia só a carga do 6º.
+        resultado = None
+    elif periodos:
+        resultado = _resposta_periodo(periodos[0], normalizada, disciplinas, por_periodo, matriz)
     else:
-        citada = _disciplina_citada(normalizada, disciplinas)
+        citada = citadas[0] if citadas else None
         if citada:
             resultado = _resposta_disciplina(citada, normalizada, disciplinas, por_periodo)
         elif totais := _resposta_totais(normalizada, matriz, len(por_periodo)):
             resultado = totais
-        elif re.search(r"\bquant[oa]s\b", normalizada) and re.search(r"\b(estagios?|tccs?)\b", normalizada):
+        elif (re.search(r"\bquant[oa]s\s+(?:\w+\s+){0,3}?(?:estagios?|tccs?)\b", normalizada)
+              and not re.search(r"\bcomponentes curriculares\b|\bcontando\b", normalizada)):
             termo = "estagio" if "estagio" in normalizada else "trabalho de conclusao"
             achadas = [d for d in disciplinas if termo in _normalizar(d.nome)]
             if achadas:

@@ -280,3 +280,87 @@ def test_numero_solto_nao_conta_como_assunto_proprio(motor_com_matriz):
 
     motor.indice.lexico = LexicoComNumeroRaro()
     assert motor._parece_continuacao("quais são as 32?")
+
+
+# --- a matriz só responde o que entendeu ---------------------------------------------------------
+
+@pytest.mark.parametrize("pergunta", [
+    "quem dá aula de Banco de Dados?",
+    "qual a ementa de N134?",
+    "qual o horário de Lógica de Programação e Algoritmos I?",
+    "o que significa a marcação OL?",
+    "N101 e N134 são do mesmo período?",
+    "posso cursar N014 e N004 juntas?",
+])
+def test_pergunta_que_a_tabela_nao_responde_segue_para_o_rag(blocos, pergunta):
+    assert responder_consulta_matriz(pergunta, blocos) is None
+
+
+@pytest.mark.parametrize("pergunta, presente, ausente", [
+    ("quais disciplinas exigem a N014?", "N101 — Lógica de Programação de Algoritmos II", "Não indicado"),
+    ("quais matérias têm N101 como pré-requisito?", "N535", "N014 —"),
+    ("o que a N535 exige?", "N134 — Banco de Dados", "N588"),
+])
+def test_direcao_do_pre_requisito_vem_da_ordem_da_frase(blocos, pergunta, presente, ausente):
+    texto, _ = responder_consulta_matriz(pergunta, blocos)
+    assert presente in texto and ausente not in texto
+
+
+def test_aulas_semanais_nao_viram_contagem_de_disciplinas(blocos):
+    texto, _ = responder_consulta_matriz("quantas aulas por semana tem o primeiro período?", blocos)
+    assert "16 aulas semanais" in texto and "componentes" not in texto
+
+
+# --- consultas novas na tabela ------------------------------------------------------------------
+
+def test_diferenca_de_carga_entre_dois_periodos(blocos):
+    texto, _ = responder_consulta_matriz("o 4º período tem quantas horas a mais que o 1º?", blocos)
+    assert "500 − 320 = 180" in texto
+
+
+def test_soma_de_carga_de_periodos_nao_contiguos(blocos):
+    texto, _ = responder_consulta_matriz("somando o 1º e o 4º período, quantas horas de disciplinas dá?", blocos)
+    assert "320 + 500 = 820" in texto and "dos períodos 1º, 4º" in texto
+
+
+def test_cada_periodo_lista_os_valores_sem_somar(blocos):
+    texto, _ = responder_consulta_matriz("quantas aulas semanais tem cada período?", blocos)
+    assert "1º: 16" in texto and "4º: 25" in texto and "=" not in texto
+
+
+def test_menor_carga_entre_os_periodos(blocos):
+    texto, _ = responder_consulta_matriz("qual semestre tem a menor carga horária?", blocos)
+    assert "menor carga é a do 1º período, com 320" in texto
+
+
+def test_disciplinas_agrupadas_pela_carga_horaria(blocos):
+    texto, _ = responder_consulta_matriz("que disciplinas têm 180 horas?", blocos)
+    assert "N476" in texto and "N239" in texto and "N134" not in texto
+
+
+def test_marcacao_ol_lista_e_presenca_por_periodo(blocos):
+    lista, _ = responder_consulta_matriz("quais disciplinas têm a marcação (OL)?", blocos)
+    assert "1 disciplina tem a marcação (OL)" in lista and "N004" in lista and "legenda" in lista
+    nenhuma, _ = responder_consulta_matriz("o 2º período tem alguma disciplina marcada com (OL)?", blocos)
+    assert nenhuma.startswith("Não.")
+
+
+def test_codigo_do_curriculo_e_codigo_pelo_nome_da_disciplina(blocos):
+    curriculo, _ = responder_consulta_matriz("qual é o código do currículo?", blocos)
+    assert "109AN" in curriculo
+    disciplina, _ = responder_consulta_matriz("qual o código de Banco de Dados?", blocos)
+    assert "N134" in disciplina
+
+
+@pytest.mark.parametrize("pergunta, esperado", [
+    ("preciso ter feito N101 pra fazer N535?", "N101 — Lógica de Programação de Algoritmos II (2º período) é pré-requisito de N535"),
+    ("posso cursar o TCC 2 antes do TCC 1?", "é preciso cursar N535 antes de N588"),
+    ("é obrigatório concluir N476 antes de N239?", "não registra pré-requisito entre"),
+])
+def test_relacao_entre_duas_disciplinas_vem_da_coluna_de_pre_requisitos(blocos, pergunta, esperado):
+    texto, _ = responder_consulta_matriz(pergunta, blocos)
+    assert esperado in texto
+
+
+def test_categoria_da_totalizacao_nao_recebe_o_total_do_curso(blocos):
+    assert responder_consulta_matriz("quantos créditos valem as horas teóricas do currículo?", blocos) is None

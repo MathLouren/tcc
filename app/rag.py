@@ -918,7 +918,8 @@ class MotorRAG:
             re.search(r"\b(quantas|quantos|numero|total)\b", normalizada)
             and re.search(r"\b(materias?|disciplinas?|componentes?)\b", normalizada)
         )
-        if not pergunta_contagem or "sistemas de informacao" not in normalizada:
+        cita_a_matriz = re.search(r"\b(sistemas de informacao|fluxograma|curriculo|grade|matriz|109an)\b", normalizada)
+        if not pergunta_contagem or not cita_a_matriz:
             return None
 
         matriz = blocos_da_matriz(self.indice.blocos)
