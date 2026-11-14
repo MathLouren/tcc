@@ -1,0 +1,29 @@
+# Sobe o chatbot com os dados em volumes nomeados: eles sobrevivem a `docker compose down`,
+# a reinícios e a novas versões da imagem. O Ollama roda fora do contêiner (na máquina hospedeira).
+#
+#   docker compose up -d --build     inicia (ou atualiza) o chatbot em http://localhost:8000
+#   docker compose logs -f           acompanha o servidor
+#   docker compose down              para o chatbot, mantendo os dados
+#   docker compose down -v           para e APAGA os dados (documentos enviados, índice e registros)
+services:
+  chatbot:
+    build: .
+    env_file: .env
+    environment:
+      OLLAMA_URL: http://host.docker.internal:11434
+    extra_hosts:
+      - "host.docker.internal:host-gateway"  # necessário no Linux; inofensivo no Windows e no macOS
+    ports:
+      - "${PORTA:-8000}:8000"
+    volumes:
+      - dados:/app/data
+      - indice:/app/indice
+      - registros:/app/registros
+      - cache:/app/.cache
+    restart: unless-stopped
+
+volumes:
+  dados:
+  indice:
+  registros:
+  cache:

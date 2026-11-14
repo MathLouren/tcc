@@ -246,9 +246,33 @@ tests/            testes automatizados (pytest)
 
 ## Docker (opcional)
 
+Com o Ollama rodando na máquina hospedeira e o arquivo `.env` criado:
+
+```
+docker compose up -d --build
+```
+
+O chatbot fica em http://localhost:8000. Os dados ficam em volumes nomeados e sobrevivem a
+reinícios e a novas versões da imagem:
+
+| Volume | Conteúdo |
+|---|---|
+| `dados` | documentos, PDFs enviados pelo painel, manifesto e parâmetros do administrador |
+| `indice` | índice vetorial |
+| `registros` | perguntas dos alunos e avaliações das respostas |
+| `cache` | modelo de embeddings, baixado da internet na primeira subida |
+
+`docker compose down` para o chatbot e mantém os dados; `docker compose down -v` apaga os volumes.
+Os documentos da pasta `data/` entram no volume `dados` só na primeira subida: depois disso, a base
+é atualizada pelo painel administrativo, não reconstruindo a imagem.
+
+Sem o Compose, os dados precisam dos mesmos volumes para não se perderem com o contêiner:
+
 ```
 docker build -t chatbot-universo .
-docker run -p 8000:8000 --env-file .env -e OLLAMA_URL=http://host.docker.internal:11434 chatbot-universo
+docker run -p 8000:8000 --env-file .env -e OLLAMA_URL=http://host.docker.internal:11434 \
+  -v chatbot_dados:/app/data -v chatbot_indice:/app/indice \
+  -v chatbot_registros:/app/registros -v chatbot_cache:/app/.cache chatbot-universo
 ```
 
 ## Solução de problemas

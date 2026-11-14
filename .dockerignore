@@ -6,3 +6,11 @@ indice
 registros
 avaliacao/resultados
 tests
+.venv_antigo
+.pytest_temp_*
+.git
+docs
+logs
+*.pdf
+!data/**/*.pdf
+data/parametros.json
