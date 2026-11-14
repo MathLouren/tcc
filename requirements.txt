@@ -11,5 +11,6 @@ python-dotenv==1.2.4
 # Embeddings locais (padrão do TCC: intfloat/multilingual-e5-base). Instala o PyTorch.
 # Se usar EMBEDDING_PROVEDOR=ollama no .env, esta linha pode ser removida.
 sentence-transformers==6.2.0
+transformers==5.20.2
 # Índice vetorial. Se a instalação falhar, remova a linha: o sistema usa busca equivalente em NumPy.
 faiss-cpu==1.15.1

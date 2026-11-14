@@ -14,8 +14,11 @@ ENV PIP_RETRIES=10 \
 # O pip da imagem base (25.0) ainda não retoma downloads; a opção existe a partir do 25.1.
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --upgrade "pip>=25.1"
+# torch e torchvision precisam vir juntos do índice de CPU: o torchvision do PyPI comum é compilado
+# para a versão com GPU e quebra ao carregar ("operator torchvision::nms does not exist").
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --resume-retries 20 torch==2.14.1 --index-url https://download.pytorch.org/whl/cpu
+    pip install --resume-retries 20 torch==2.14.1 torchvision==0.29.2 \
+      --index-url https://download.pytorch.org/whl/cpu
 
 COPY requirements.txt .
 RUN --mount=type=cache,target=/root/.cache/pip \
