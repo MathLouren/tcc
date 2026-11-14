@@ -6,9 +6,20 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     HF_HOME=/app/.cache/huggingface \
     OLLAMA_URL=http://host.docker.internal:11434
 
+# Downloads grandes em rede instável: o pip retoma o arquivo de onde parou (--resume-retries) e o
+# cache fica num volume do BuildKit, então uma nova tentativa não baixa de novo o que já veio.
+# O PyTorch (só CPU, ~200 MB) fica em etapa própria: depois de instalado, não é refeito.
+ENV PIP_RETRIES=10 \
+    PIP_DEFAULT_TIMEOUT=60
+# O pip da imagem base (25.0) ainda não retoma downloads; a opção existe a partir do 25.1.
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --upgrade "pip>=25.1"
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --resume-retries 20 torch==2.14.1 --index-url https://download.pytorch.org/whl/cpu
+
 COPY requirements.txt .
-RUN pip install --no-cache-dir torch==2.14.1 --index-url https://download.pytorch.org/whl/cpu \
- && pip install --no-cache-dir -r requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --resume-retries 20 -r requirements.txt
 
 COPY app ./app
 COPY web ./web
