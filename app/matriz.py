@@ -126,7 +126,8 @@ def _resumo_por_periodo(blocos: list[dict]) -> tuple[dict[int, dict[str, int]], 
 
 def _periodos_citados(normalizada: str, total: int) -> list[int]:
     """Todos os períodos citados: "6º, 7º e 8º", "do 1º ao 8º", "cinco primeiros", "todos os períodos"."""
-    if re.search(r"\b20\d{2}\b", normalizada) or not re.search(r"\b(periodos?|semestres?)\b", normalizada):
+    # "período" escrito ou ordinal ("do 4º é pré-requisito do 6º?"); "2º semestre de 2026" é o semestre letivo
+    if re.search(r"\b20\d{2}\b", normalizada) or not re.search(r"\b(periodos?|semestres?)\b|\b[1-9]\s*o(?![a-z])", normalizada):
         return []
     periodos: set[int] = set()
     intervalo = re.search(r"\bdo\s+([1-9])\s*o?\s*(?:periodo\s+)?(?:ao|a|ate o)\s+([1-9])\s*o?\b", normalizada)
@@ -272,6 +273,56 @@ def _pede_dependentes(normalizada: str, d: Disciplina) -> bool:
     return bool(como and 0 <= posicao < como.start())
 
 
+_RE_CADEIA = re.compile(r"\b(sequencia|cadeia|caminho|trilha|todos os pre.?requisitos|ate chegar|ate o|ate a)\b")
+
+
+def _resposta_cadeia(d, por_codigo, por_periodo):
+    """Pré-requisitos dos pré-requisitos, do fim para o começo: a cadeia completa até d."""
+    etapas, visitadas, fila = [], set(), [d]
+    while fila:
+        atual = fila.pop(0)
+        if atual.codigo in visitadas or not atual.requisitos:
+            continue
+        visitadas.add(atual.codigo)
+        exigidas = [por_codigo[r] for r in atual.requisitos if r in por_codigo]
+        etapas.append((atual, exigidas))
+        fila.extend(exigidas)
+    linhas = [
+        f"- Para cursar {_rotulo_disciplina(alvo)} ({alvo.periodo}º período): "
+        + ", ".join(f"{x.codigo} ({x.periodo}º)" for x in exigidas)
+        for alvo, exigidas in sorted(etapas, key=lambda par: par[0].periodo)
+    ]
+    envolvidas = {d.periodo} | {x.periodo for _, exigidas in etapas for x in exigidas}
+    return (f"Na {_ROTULO}, a cadeia de pré-requisitos até {_rotulo_disciplina(d)} é:\n" + "\n".join(linhas),
+            [por_periodo[n] for n in sorted(envolvidas) if n in por_periodo])
+
+
+def _resposta_requisitos_entre_periodos(normalizada, disciplinas, por_periodo, periodos):
+    """Disciplinas de um período que são pré-requisito de disciplinas de outro(s).
+
+    O período mais antigo citado é o dos pré-requisitos. Com "tanto ... quanto", a disciplina precisa ser
+    pré-requisito em todos os outros períodos citados.
+    """
+    origem, destinos = periodos[0], periodos[1:]
+    pares: dict[str, list[Disciplina]] = {}
+    for d in disciplinas:
+        if d.periodo in destinos:
+            for r in d.requisitos:
+                pares.setdefault(r, []).append(d)
+    por_codigo = {d.codigo: d for d in disciplinas}
+    achadas = [(por_codigo[r], deps) for r, deps in pares.items() if r in por_codigo and por_codigo[r].periodo == origem]
+    if re.search(r"\btanto\b", normalizada):
+        achadas = [(r, deps) for r, deps in achadas if {x.periodo for x in deps} >= set(destinos)]
+    blocos = [por_periodo[p] for p in periodos if p in por_periodo]
+    destino_txt = " e ".join(f"{p}º" for p in destinos)
+    if not achadas:
+        return (f"Não. A {_ROTULO} não registra disciplina do {origem}º período como pré-requisito de disciplina "
+                f"do {destino_txt} período.", blocos)
+    linhas = [f"- {_rotulo_disciplina(r)} é pré-requisito de "
+              + ", ".join(f"{_rotulo_disciplina(x)} ({x.periodo}º período)" for x in deps) for r, deps in achadas]
+    return f"Sim. Na {_ROTULO}:\n" + "\n".join(linhas), blocos
+
+
 def _resposta_disciplina(d, normalizada, disciplinas, por_periodo):
     por_codigo = {x.codigo: x for x in disciplinas}
     bloco = [por_periodo[d.periodo]]
@@ -289,8 +340,12 @@ def _resposta_disciplina(d, normalizada, disciplinas, por_periodo):
     if _RE_REQUISITO.search(normalizada) or re.search(r"\bexigem?\b", normalizada):
         if not d.requisitos:
             return f"A {_ROTULO} não indica pré-requisito para {_rotulo_disciplina(d)}.", bloco
+        if _RE_CADEIA.search(normalizada):
+            return _resposta_cadeia(d, por_codigo, por_periodo)
+        # o período de cada pré-requisito vai junto: "em quais períodos estão os pré-requisitos?"
         lista = "\n".join(
-            f"- {_rotulo_disciplina(por_codigo[r])}" if r in por_codigo else f"- {r}" for r in d.requisitos
+            f"- {_rotulo_disciplina(por_codigo[r])} ({por_codigo[r].periodo}º período)" if r in por_codigo else f"- {r}"
+            for r in d.requisitos
         )
         return f"Na {_ROTULO}, os pré-requisitos de {_rotulo_disciplina(d)} são:\n{lista}", bloco
 
@@ -404,6 +459,84 @@ def _resposta_relacao(citadas, por_periodo):
             f"{_rotulo_disciplina(b)} ({b.periodo}º período), em nenhum dos dois sentidos.", blocos)
 
 
+_TIPOS_DE_COMPONENTE = {
+    "estagio": (r"\bestagios?\b", "estagio", "Horas de Est"),
+    "tcc": (r"\btccs?\b|\btrabalhos? de conclusao\b", "trabalho de conclusao", "Pesquisa/Projetos/TCC"),
+    "optativa": (r"\boptativas?\b", "optativa", "Horas Optativas"),
+}
+_RE_COMPOSICAO = re.compile(
+    r"\b(chega|chegar|chegam|compoe|compoem|composicao|compost[oa]s?|decompo\w*|formad[oa]s?|se dividem|divid\w+|"
+    r"distribuem|de onde vem)\b"
+)
+
+
+def _linhas_da_totalizacao(blocos: list[dict]) -> tuple[list[tuple[str, int]], int | None, dict | None]:
+    """Categorias do quadro de totalização em horas e o mínimo de horas cumpridas."""
+    totais = next((b for b in blocos if str(b.get("secao", "")).startswith("Totalização")), None)
+    categorias, total = [], None
+    for linha in str((totais or {}).get("texto", "")).splitlines():
+        achado = re.match(r"^[-*\s]*([^:=]+?)\s*[:=]\s*([\d.]+)\s*h", linha.strip())
+        if not achado:
+            continue
+        horas = int(achado.group(2).replace(".", ""))
+        if "cumpridas" in _normalizar(achado.group(1)):
+            total = horas
+        else:
+            categorias.append((achado.group(1).strip(), horas))
+    return categorias, total, totais
+
+
+def _resposta_composicao_total(normalizada, blocos):
+    """Como as horas mínimas do curso se formam: pelos períodos e pelo quadro de totalização."""
+    if not (_RE_COMPOSICAO.search(normalizada) and _RE_HORAS.search(normalizada)):
+        return None
+    categorias, total, totais = _linhas_da_totalizacao(blocos)
+    linhas, resumo = _resumo_por_periodo(blocos)
+    if not total:
+        return None
+    partes, usados = [], [totais]
+    if linhas:
+        disciplinas_h = sum(v["carga"] for v in linhas.values())
+        complementares_h = sum(v["complementares"] for v in linhas.values())
+        if disciplinas_h + complementares_h == total:
+            partes.append(f"Pelos períodos: {disciplinas_h} h de disciplinas (soma do 1º ao {max(linhas)}º período) + "
+                          f"{complementares_h} h de atividades complementares = {total} h.")
+            usados.append(resumo)
+    com_horas = [(nome, h) for nome, h in categorias if h]
+    if com_horas and sum(h for _, h in com_horas) == total:
+        zeradas = [nome for nome, h in categorias if not h]
+        texto = "Pelo quadro de totalização: " + " + ".join(f"{nome} {h}" for nome, h in com_horas) + f" = {total} h."
+        if zeradas:
+            texto += " Com 0 h: " + ", ".join(zeradas) + "."
+        partes.append(texto)
+    if not partes:
+        return None
+    return f"A {_ROTULO} exige no mínimo {total} horas.\n" + "\n".join(partes), usados
+
+
+def _resposta_soma_por_tipo(normalizada, disciplinas, por_periodo, blocos):
+    """Soma das horas dos componentes de um tipo (estágio, TCC, optativa), conferida com a totalização."""
+    if not (_RE_SOMA.search(normalizada) and _RE_HORAS.search(normalizada)):
+        return None
+    tipo = next((t for t, (padrao, _, _) in _TIPOS_DE_COMPONENTE.items() if re.search(padrao, normalizada)), None)
+    if not tipo:
+        return None
+    _, termo, rotulo_total = _TIPOS_DE_COMPONENTE[tipo]
+    achadas = [d for d in disciplinas if termo in _normalizar(d.nome) and re.sub(r"\D", "", d.horas)]
+    if not achadas:
+        return None
+    horas = [int(re.sub(r"\D", "", d.horas)) for d in achadas]
+    texto = (f"Na {_ROTULO}: " + " + ".join(f"{h} ({d.codigo})" for h, d in zip(horas, achadas))
+             + f" = {sum(horas)} horas.")
+    categorias, _, totais = _linhas_da_totalizacao(blocos)
+    usados = [por_periodo[n] for n in dict.fromkeys(d.periodo for d in achadas)]
+    minimo = next((h for nome, h in categorias if _normalizar(rotulo_total) in _normalizar(nome)), None)
+    if minimo is not None and minimo == sum(horas):
+        texto += f" É o mesmo valor do mínimo indicado no quadro de totalização ({minimo} h)."
+        usados.append(totais)
+    return texto, usados
+
+
 def _resposta_por_carga(normalizada, disciplinas, por_periodo):
     """Disciplinas agrupadas pela carga horária citada: "quais têm 180 horas?", "quantas têm 80 h?"."""
     cargas = [int(n) for n in re.findall(r"\b(\d{2,3})\s*h(?:oras)?\b", normalizada)]
@@ -499,6 +632,10 @@ def responder_consulta_matriz(pergunta: str, blocos: list[dict]) -> tuple[str, l
     resultado = None
     if _RE_MARCACAO.search(normalizada):
         resultado = _resposta_marcacao(normalizada, disciplinas, por_periodo, periodos)
+    elif not citadas and (composicao := _resposta_composicao_total(normalizada, matriz)):
+        resultado = composicao
+    elif len(periodos) >= 2 and not citadas and (_RE_REQUISITO.search(normalizada) or _RE_DEPENDENTES.search(normalizada)):
+        resultado = _resposta_requisitos_entre_periodos(normalizada, disciplinas, por_periodo, periodos)
     elif por_periodos := _resposta_por_periodos(normalizada, periodos, matriz):
         resultado = por_periodos
     elif not periodos and (por_carga := _resposta_por_carga(normalizada, disciplinas, por_periodo)):
@@ -519,10 +656,17 @@ def responder_consulta_matriz(pergunta: str, blocos: list[dict]) -> tuple[str, l
         citada = citadas[0] if citadas else None
         if citada:
             resultado = _resposta_disciplina(citada, normalizada, disciplinas, por_periodo)
+        elif re.search(r"\b(soma|somando|somad[oa]s?|juntando)\b", normalizada) and (
+            soma_tipo := _resposta_soma_por_tipo(normalizada, disciplinas, por_periodo, matriz)
+        ):
+            resultado = soma_tipo  # "somando os estágios" pede a conta, não só o mínimo da totalização
         elif totais := _resposta_totais(normalizada, matriz, len(por_periodo)):
             resultado = totais
+        elif soma_tipo := _resposta_soma_por_tipo(normalizada, disciplinas, por_periodo, matriz):
+            resultado = soma_tipo
         elif (re.search(r"\bquant[oa]s\s+(?:\w+\s+){0,3}?(?:estagios?|tccs?)\b", normalizada)
-              and not re.search(r"\bcomponentes curriculares\b|\bcontando\b", normalizada)):
+              and not re.search(r"\bcomponentes curriculares\b|\bcontando\b", normalizada)
+              and not _RE_HORAS.search(normalizada)):  # "quantas horas de estágio" pede horas, não a contagem
             termo = "estagio" if "estagio" in normalizada else "trabalho de conclusao"
             achadas = [d for d in disciplinas if termo in _normalizar(d.nome)]
             if achadas:

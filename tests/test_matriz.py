@@ -364,3 +364,66 @@ def test_relacao_entre_duas_disciplinas_vem_da_coluna_de_pre_requisitos(blocos, 
 
 def test_categoria_da_totalizacao_nao_recebe_o_total_do_curso(blocos):
     assert responder_consulta_matriz("quantos créditos valem as horas teóricas do currículo?", blocos) is None
+
+
+# --- cadeias, relações entre períodos, somas por tipo e composição do total ----------------------
+
+TOTALIZACAO = """
+## Totalização de carga horária
+
+- Horas Teóricas: 460 h/23 créditos
+- Mínimo de Horas de Estágio: 360 h / 18 créditos
+- Mínimo de Atividades Complementares: 60 h / 3 créditos
+- Horas Práticas: 0 h / 0 créditos
+- MINIMO DE HORAS CUMPRIDAS = 880 horas / 44 créditos
+"""
+
+
+@pytest.fixture
+def blocos_com_totais(ambiente):
+    (ambiente.docs_dir / "grade_curricular.md").write_text(MATRIZ + TOTALIZACAO, encoding="utf-8")
+    return Servico(ambiente, embedder=EmbedderFalso(), llm=LLMFalso()).motor.indice.blocos
+
+
+def test_pre_requisitos_vem_com_o_periodo_de_cada_um(blocos):
+    texto, _ = responder_consulta_matriz("de que períodos são os pré-requisitos de N535?", blocos)
+    assert "N101 — Lógica de Programação de Algoritmos II (2º período)" in texto
+    assert "N134 — Banco de Dados (2º período)" in texto
+
+
+def test_cadeia_de_pre_requisitos_inclui_os_pre_requisitos_dos_pre_requisitos(blocos):
+    texto, _ = responder_consulta_matriz("qual o caminho de pré-requisitos até o TCC II?", blocos)
+    assert "Para cursar N588" in texto and "N535 (3º)" in texto
+    assert "Para cursar N535" in texto and "N101 (2º)" in texto
+    assert "Para cursar N101" in texto and "N014 (1º)" in texto
+
+
+@pytest.mark.parametrize("pergunta, inicio, presente", [
+    ("tem disciplina do 1º período que é pré-requisito de alguma do 2º?", "Sim.", "N014"),
+    ("alguma do 1º prende disciplina do 4º?", "Não.", "não registra"),
+])
+def test_pre_requisitos_entre_periodos(blocos, pergunta, inicio, presente):
+    texto, _ = responder_consulta_matriz(pergunta, blocos)
+    assert texto.startswith(inicio) and presente in texto
+
+
+def test_tanto_quanto_exige_pre_requisito_em_todos_os_periodos_citados(blocos):
+    # N101 (2º) prende só N535 (3º); nenhuma do 2º prende disciplinas do 3º e do 4º ao mesmo tempo
+    texto, _ = responder_consulta_matriz("qual disciplina do 2º é pré-requisito tanto do 3º quanto do 4º?", blocos)
+    assert texto.startswith("Não.")
+
+
+def test_soma_das_horas_por_tipo_de_componente_confere_com_a_totalizacao(blocos_com_totais):
+    texto, _ = responder_consulta_matriz("somadas, as disciplinas de estágio dão quantas horas no total?", blocos_com_totais)
+    assert "180 (N476) + 180 (N239) = 360 horas" in texto and "mínimo indicado no quadro de totalização" in texto
+
+
+def test_composicao_do_total_pelos_periodos_e_pela_totalizacao(blocos_com_totais):
+    texto, _ = responder_consulta_matriz("como são compostas as horas mínimas da grade?", blocos_com_totais)
+    assert "820 h de disciplinas" in texto and "60 h de atividades complementares = 880 h" in texto
+    assert "Horas Teóricas 460 + Mínimo de Horas de Estágio 360" in texto and "Com 0 h: Horas Práticas" in texto
+
+
+def test_quantas_horas_de_estagio_nao_vira_contagem_de_estagios(blocos):
+    resposta = responder_consulta_matriz("quantas horas de estágio preciso cumprir?", blocos)
+    assert resposta is None or "componentes desse tipo" not in resposta[0]

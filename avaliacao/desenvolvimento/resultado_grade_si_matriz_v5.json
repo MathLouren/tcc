@@ -1,0 +1,2418 @@
+{
+ "descricao": "Conjunto de DESENVOLVIMENTO, depois das consultas de cadeia, relação entre períodos, soma por tipo e composição do total. Avaliado por leitura de cada resposta.",
+ "data": "2026-11-14",
+ "resumo": {
+  "respondiveis": 108,
+  "certas": 107,
+  "fora_do_escopo": 12,
+  "recusas_corretas": 12
+ },
+ "casos": [
+  {
+   "id": "GC-001",
+   "nivel": "Fácil",
+   "tema": "Identificação",
+   "pergunta": "A que curso pertence a grade curricular?",
+   "esperada": "A grade corresponde ao Bacharelado em Sistemas de Informação.",
+   "termos": [
+    "Bacharelado",
+    "Sistemas de Informação"
+   ],
+   "resposta": "O curso pertence ao Bacharelado em Sistemas de Informação.",
+   "modo": "llm",
+   "esclarecimento": null,
+   "segundos": 2.2,
+   "termos_achados": 2,
+   "termos_total": 2,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-002",
+   "nivel": "Fácil",
+   "tema": "Identificação",
+   "pergunta": "Qual é o grau acadêmico indicado para Sistemas de Informação?",
+   "esperada": "Bacharelado.",
+   "termos": [
+    "Bacharelado"
+   ],
+   "resposta": "CURRÍCULO: 109AN\nINÍCIO: 2019-1\n\nO grau acadêmico indicado para Sistemas de Informação é Bacharelado.",
+   "modo": "llm",
+   "esclarecimento": null,
+   "segundos": 3.4,
+   "termos_achados": 1,
+   "termos_total": 1,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-003",
+   "nivel": "Fácil",
+   "tema": "Identificação",
+   "pergunta": "Qual é o código do currículo representado no fluxograma?",
+   "esperada": "Currículo 109AN.",
+   "termos": [
+    "109AN"
+   ],
+   "resposta": "O fluxograma de Sistemas de Informação corresponde ao currículo 109AN.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 1,
+   "termos_total": 1,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-004",
+   "nivel": "Fácil",
+   "tema": "Identificação",
+   "pergunta": "Qual é o período de início indicado no currículo 109AN?",
+   "esperada": "2019-1.",
+   "termos": [
+    "2019-1"
+   ],
+   "resposta": "O período de início indicado no currículo 109AN é 2019-1.",
+   "modo": "llm",
+   "esclarecimento": null,
+   "segundos": 2.8,
+   "termos_achados": 1,
+   "termos_total": 1,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-005",
+   "nivel": "Fácil",
+   "tema": "Identificação",
+   "pergunta": "Quantos períodos estão organizados no fluxograma de Sistemas de Informação?",
+   "esperada": "Oito períodos, do 1º ao 8º.",
+   "termos": [
+    "8",
+    "períodos"
+   ],
+   "resposta": "A matriz curricular 109AN de Sistemas de Informação organiza o curso em 8 períodos (semestres), o que corresponde a 4 anos.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 2,
+   "termos_total": 2,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-006",
+   "nivel": "Fácil",
+   "tema": "Identificação",
+   "pergunta": "Quais marcas institucionais aparecem na parte superior do fluxograma?",
+   "esperada": "Os logotipos do UNITRI e da UNIVERSO.",
+   "termos": [
+    "UNITRI",
+    "UNIVERSO"
+   ],
+   "resposta": "Não localizei essa informação nos documentos oficiais da UNIVERSO disponíveis para consulta. Para dúvidas individuais ou não previstas nos documentos, acesse o Espaço do Aluno ou fale com a central de atendimento pelo 0800 721 0251 ou pelo e-mail contato@universo.com.br.",
+   "modo": "sem_resultado",
+   "esclarecimento": null,
+   "segundos": 5.5,
+   "termos_achados": 1,
+   "termos_total": 2,
+   "veredito": "falha",
+   "classe_do_erro": "informacao_ausente_do_texto_indexado"
+  },
+  {
+   "id": "GC-007",
+   "nivel": "Fácil",
+   "tema": "Carga horária",
+   "pergunta": "Qual é a carga horária mínima total exigida nesse fluxograma?",
+   "esperada": "3.000 horas.",
+   "termos": [
+    "3.000 horas"
+   ],
+   "resposta": "A matriz curricular 109AN de Sistemas de Informação exige no mínimo 3.000 horas (150 créditos) para a conclusão do curso.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 1,
+   "termos_total": 1,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-008",
+   "nivel": "Fácil",
+   "tema": "Créditos",
+   "pergunta": "Qual é o número total de créditos exigidos no currículo?",
+   "esperada": "150 créditos.",
+   "termos": [
+    "150",
+    "créditos"
+   ],
+   "resposta": "A matriz curricular 109AN de Sistemas de Informação exige no mínimo 3.000 horas (150 créditos) para a conclusão do curso.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 2,
+   "termos_total": 2,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-009",
+   "nivel": "Fácil",
+   "tema": "Carga horária",
+   "pergunta": "Quantas horas teóricas o quadro de totalização apresenta?",
+   "esperada": "2.320 horas teóricas.",
+   "termos": [
+    "2320",
+    "teóricas"
+   ],
+   "resposta": "Horas Teóricas: 2320 h / 116 créditos",
+   "modo": "llm",
+   "esclarecimento": null,
+   "segundos": 3.0,
+   "termos_achados": 2,
+   "termos_total": 2,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-010",
+   "nivel": "Fácil",
+   "tema": "Créditos",
+   "pergunta": "A quantos créditos equivalem as horas teóricas do currículo?",
+   "esperada": "116 créditos, referentes às 2.320 horas teóricas.",
+   "termos": [
+    "116",
+    "créditos"
+   ],
+   "resposta": "Horas Teóricas: 2320 h / 116 créditos",
+   "modo": "llm",
+   "esclarecimento": null,
+   "segundos": 2.1,
+   "termos_achados": 2,
+   "termos_total": 2,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-011",
+   "nivel": "Fácil",
+   "tema": "Carga horária",
+   "pergunta": "Qual é a carga horária de horas práticas na totalização geral?",
+   "esperada": "O campo \"Horas Práticas\" apresenta 0 hora e 0 crédito.",
+   "termos": [
+    "0",
+    "horas práticas"
+   ],
+   "resposta": "A carga horária de horas práticas na totalização geral é de 0 h / 0 créditos.",
+   "modo": "llm",
+   "esclarecimento": null,
+   "segundos": 3.3,
+   "termos_achados": 2,
+   "termos_total": 2,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-012",
+   "nivel": "Fácil",
+   "tema": "Carga horária",
+   "pergunta": "Qual é a carga mínima de atividades complementares?",
+   "esperada": "240 horas, correspondentes a 12 créditos.",
+   "termos": [
+    "240",
+    "12 créditos"
+   ],
+   "resposta": "A carga mínima de atividades complementares é de 240 horas / 12 créditos, conforme informado no Trecho 3.",
+   "modo": "llm",
+   "esclarecimento": null,
+   "segundos": 2.7,
+   "termos_achados": 2,
+   "termos_total": 2,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-013",
+   "nivel": "Fácil",
+   "tema": "Disciplinas por período",
+   "pergunta": "Quais disciplinas aparecem no 1º período de Sistemas de Informação?",
+   "esperada": "No 1º período constam: Ciências Exatas e Tecnologias (N004); Gestão da Inovação Tecnológica (N012); Laboratório de Computação Aplicada (N013); Lógica de Programação e Algoritmos I (N014).",
+   "termos": [
+    "N004",
+    "N012",
+    "N013",
+    "N014"
+   ],
+   "resposta": "Disciplinas do 1º período na matriz curricular 109AN de Sistemas de Informação:\n- N004 — Ciências Exatas e Tecnologias (80 h, 4 créditos)\n- N012 — Gestão da Inovação Tecnológica (80 h, 4 créditos)\n- N013 — Laboratório de Computação Aplicada (80 h, 4 créditos)\n- N014 — Lógica de Programação e Algoritmos I (80 h, 4 créditos)",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 4,
+   "termos_total": 4,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-014",
+   "nivel": "Fácil",
+   "tema": "Disciplinas por período",
+   "pergunta": "Quais disciplinas aparecem no 2º período de Sistemas de Informação?",
+   "esperada": "No 2º período constam: Linguagens e Pesquisa (N001); Matemática Aplicada (N032); Lógica de Programação de Algoritmos II (N101); Organização e Arquitetura de Computadores (N107).",
+   "termos": [
+    "N001",
+    "N032",
+    "N101",
+    "N107"
+   ],
+   "resposta": "Disciplinas do 2º período na matriz curricular 109AN de Sistemas de Informação:\n- N001 — Linguagens e Pesquisa (80 h, 4 créditos)\n- N032 — Matemática Aplicada (80 h, 4 créditos)\n- N101 — Lógica de Programação de Algoritmos II (80 h, 4 créditos)\n- N107 — Organização e Arquitetura de Computadores (80 h, 4 créditos)",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 4,
+   "termos_total": 4,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-015",
+   "nivel": "Fácil",
+   "tema": "Disciplinas por período",
+   "pergunta": "Quais disciplinas aparecem no 3º período de Sistemas de Informação?",
+   "esperada": "No 3º período constam: Homem, Cultura e Sociedade (N008); Banco de Dados (N134); Engenharia de Software (N159); Estrutura de Dados (N164).",
+   "termos": [
+    "N008",
+    "N134",
+    "N159",
+    "N164"
+   ],
+   "resposta": "Disciplinas do 3º período na matriz curricular 109AN de Sistemas de Informação:\n- N008 — Homem, Cultura e Sociedade (80 h, 4 créditos)\n- N134 — Banco de Dados (80 h, 4 créditos)\n- N159 — Engenharia de Software (80 h, 4 créditos)\n- N164 — Estrutura de Dados (80 h, 4 créditos)",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 4,
+   "termos_total": 4,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-016",
+   "nivel": "Fácil",
+   "tema": "Disciplinas por período",
+   "pergunta": "Quais disciplinas aparecem no 4º período de Sistemas de Informação?",
+   "esperada": "No 4º período constam: Gestão de Negócios e Liderança (N048); Programação para Internet (N279); Redes de Computadores (N288); Gestão de Pessoas, Empresas e Serviços (N492).",
+   "termos": [
+    "N048",
+    "N279",
+    "N288",
+    "N492"
+   ],
+   "resposta": "Disciplinas do 4º período na matriz curricular 109AN de Sistemas de Informação:\n- N048 — Gestão de Negócios e Liderança (80 h, 4 créditos)\n- N279 — Programação para Internet (80 h, 4 créditos)\n- N288 — Redes de Computadores (80 h, 4 créditos)\n- N492 — Gestão de Pessoas, Empresas e Serviços (80 h, 4 créditos)",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 4,
+   "termos_total": 4,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-017",
+   "nivel": "Fácil",
+   "tema": "Disciplinas por período",
+   "pergunta": "Quais disciplinas aparecem no 5º período de Sistemas de Informação?",
+   "esperada": "No 5º período constam: Inteligência Artificial (N098); Temas Transversais e Atualidades (N207); Grafos e Algoritmos Computacionais (N255); Análise de Sistemas I (N303).",
+   "termos": [
+    "N098",
+    "N207",
+    "N255",
+    "N303"
+   ],
+   "resposta": "Disciplinas do 5º período na matriz curricular 109AN de Sistemas de Informação:\n- N098 — Inteligência Artificial (80 h, 4 créditos)\n- N207 — Temas Transversais e Atualidades (80 h, 4 créditos)\n- N255 — Grafos e Algoritmos Computacionais (80 h, 4 créditos)\n- N303 — Análise de Sistemas I (80 h, 4 créditos)",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 4,
+   "termos_total": 4,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-018",
+   "nivel": "Fácil",
+   "tema": "Disciplinas por período",
+   "pergunta": "Quais disciplinas aparecem no 6º período de Sistemas de Informação?",
+   "esperada": "No 6º período constam: Projeto e Desenvolvimento de Software (N385); Análise de Sistemas II (N392); Gerenciamento de Projeto em Tecnologia (N422); Estágio Supervisionado em Sistemas de Informação I (N476).",
+   "termos": [
+    "N385",
+    "N392",
+    "N422",
+    "N476"
+   ],
+   "resposta": "Disciplinas do 6º período na matriz curricular 109AN de Sistemas de Informação:\n- N385 — Projeto e Desenvolvimento de Software (80 h, 4 créditos)\n- N392 — Análise de Sistemas II (80 h, 4 créditos)\n- N422 — Gerenciamento de Projeto em Tecnologia (80 h, 4 créditos)\n- N476 — Estágio Supervisionado em Sistemas de Informação I (180 h, 9 créditos)",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 4,
+   "termos_total": 4,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-019",
+   "nivel": "Fácil",
+   "tema": "Disciplinas por período",
+   "pergunta": "Quais disciplinas aparecem no 7º período de Sistemas de Informação?",
+   "esperada": "No 7º período constam: Estágio Supervisionado em Sistemas de Informação II (N239); Segurança e Auditoria de Sistemas (N245); Sistemas de Computação Móvel (N379); Sistemas de Apoio a Decisão e Governança (N460); Trabalho de Conclusão de Curso em Sistemas de Informação I (N535).",
+   "termos": [
+    "N239",
+    "N245",
+    "N379",
+    "N460",
+    "N535"
+   ],
+   "resposta": "Disciplinas do 7º período na matriz curricular 109AN de Sistemas de Informação:\n- N239 — Estágio Supervisionado em Sistemas de Informação II (180 h, 9 créditos)\n- N245 — Segurança e Auditoria de Sistemas (80 h, 4 créditos)\n- N379 — Sistemas de Computação Móvel (80 h, 4 créditos)\n- N460 — Sistemas de Apoio a Decisão e Governança (80 h, 4 créditos)\n- N535 — Trabalho de Conclusão de Curso em Sistemas de Informação I (80 h, 4 créditos)",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 5,
+   "termos_total": 5,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-020",
+   "nivel": "Fácil",
+   "tema": "Disciplinas por período",
+   "pergunta": "Quais disciplinas aparecem no 8º período de Sistemas de Informação?",
+   "esperada": "No 8º período constam: Sistemas Multimídias e Distribuídos (N461); Trabalho de Conclusão de Curso em Sistemas de Informação II (N588); Optativa em Sistemas de Informação (OPT).",
+   "termos": [
+    "N461",
+    "N588",
+    "OPT"
+   ],
+   "resposta": "Disciplinas do 8º período na matriz curricular 109AN de Sistemas de Informação:\n- N461 — Sistemas Multimídias e Distribuídos (80 h, 4 créditos)\n- N588 — Trabalho de Conclusão de Curso em Sistemas de Informação II (80 h, 4 créditos)\n- OPT — Optativa em Sistemas de Informação (80 h, 4 créditos)",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 3,
+   "termos_total": 3,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-021",
+   "nivel": "Fácil",
+   "tema": "Carga por período",
+   "pergunta": "Qual é a carga horária de disciplinas do 1º período, sem contar as atividades complementares?",
+   "esperada": "O 1º período tem 320 horas de disciplinas.",
+   "termos": [
+    "carga horária",
+    "320"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, o 1º período tem 350 horas: 320 h de carga horária de disciplinas e 30 h de atividades complementares, com 16 aulas semanais.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 2,
+   "termos_total": 2,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-022",
+   "nivel": "Fácil",
+   "tema": "Carga por período",
+   "pergunta": "Qual é a carga horária de disciplinas do 2º período, sem contar as atividades complementares?",
+   "esperada": "O 2º período tem 320 horas de disciplinas.",
+   "termos": [
+    "carga horária",
+    "320"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, o 2º período tem 350 horas: 320 h de carga horária de disciplinas e 30 h de atividades complementares, com 16 aulas semanais.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 2,
+   "termos_total": 2,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-023",
+   "nivel": "Fácil",
+   "tema": "Carga por período",
+   "pergunta": "Qual é a carga horária de disciplinas do 3º período, sem contar as atividades complementares?",
+   "esperada": "O 3º período tem 320 horas de disciplinas.",
+   "termos": [
+    "carga horária",
+    "320"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, o 3º período tem 350 horas: 320 h de carga horária de disciplinas e 30 h de atividades complementares, com 16 aulas semanais.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 2,
+   "termos_total": 2,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-024",
+   "nivel": "Fácil",
+   "tema": "Carga por período",
+   "pergunta": "Qual é a carga horária de disciplinas do 4º período, sem contar as atividades complementares?",
+   "esperada": "O 4º período tem 320 horas de disciplinas.",
+   "termos": [
+    "carga horária",
+    "320"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, o 4º período tem 350 horas: 320 h de carga horária de disciplinas e 30 h de atividades complementares, com 16 aulas semanais.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 2,
+   "termos_total": 2,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-025",
+   "nivel": "Fácil",
+   "tema": "Carga por período",
+   "pergunta": "Qual é a carga horária de disciplinas do 5º período, sem contar as atividades complementares?",
+   "esperada": "O 5º período tem 320 horas de disciplinas.",
+   "termos": [
+    "carga horária",
+    "320"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, o 5º período tem 350 horas: 320 h de carga horária de disciplinas e 30 h de atividades complementares, com 16 aulas semanais.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 2,
+   "termos_total": 2,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-026",
+   "nivel": "Fácil",
+   "tema": "Carga por período",
+   "pergunta": "Qual é a carga horária de disciplinas do 6º período, sem contar as atividades complementares?",
+   "esperada": "O 6º período tem 420 horas de disciplinas.",
+   "termos": [
+    "carga horária",
+    "420"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, o 6º período tem 450 horas: 420 h de carga horária de disciplinas e 30 h de atividades complementares, com 21 aulas semanais.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 2,
+   "termos_total": 2,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-027",
+   "nivel": "Fácil",
+   "tema": "Carga por período",
+   "pergunta": "Qual é a carga horária de disciplinas do 7º período, sem contar as atividades complementares?",
+   "esperada": "O 7º período tem 500 horas de disciplinas.",
+   "termos": [
+    "carga horária",
+    "500"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, o 7º período tem 530 horas: 500 h de carga horária de disciplinas e 30 h de atividades complementares, com 25 aulas semanais.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 2,
+   "termos_total": 2,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-028",
+   "nivel": "Fácil",
+   "tema": "Carga por período",
+   "pergunta": "Qual é a carga horária de disciplinas do 8º período, sem contar as atividades complementares?",
+   "esperada": "O 8º período tem 240 horas de disciplinas.",
+   "termos": [
+    "carga horária",
+    "240"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, o 8º período tem 270 horas: 240 h de carga horária de disciplinas e 30 h de atividades complementares, com 12 aulas semanais.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 2,
+   "termos_total": 2,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-029",
+   "nivel": "Fácil",
+   "tema": "Aulas semanais",
+   "pergunta": "Quantas aulas semanais estão previstas no 1º período?",
+   "esperada": "O fluxograma indica 16 aulas semanais no 1º período.",
+   "termos": [
+    "16",
+    "aulas semanais"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, o 1º período tem 16 aulas semanais.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 2,
+   "termos_total": 2,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-030",
+   "nivel": "Fácil",
+   "tema": "Aulas semanais",
+   "pergunta": "Quantas aulas semanais estão previstas no 2º período?",
+   "esperada": "O fluxograma indica 16 aulas semanais no 2º período.",
+   "termos": [
+    "16",
+    "aulas semanais"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, o 2º período tem 16 aulas semanais.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 2,
+   "termos_total": 2,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-031",
+   "nivel": "Fácil",
+   "tema": "Aulas semanais",
+   "pergunta": "Quantas aulas semanais estão previstas no 3º período?",
+   "esperada": "O fluxograma indica 16 aulas semanais no 3º período.",
+   "termos": [
+    "16",
+    "aulas semanais"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, o 3º período tem 16 aulas semanais.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 2,
+   "termos_total": 2,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-032",
+   "nivel": "Fácil",
+   "tema": "Aulas semanais",
+   "pergunta": "Quantas aulas semanais estão previstas no 4º período?",
+   "esperada": "O fluxograma indica 16 aulas semanais no 4º período.",
+   "termos": [
+    "16",
+    "aulas semanais"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, o 4º período tem 16 aulas semanais.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 2,
+   "termos_total": 2,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-033",
+   "nivel": "Fácil",
+   "tema": "Aulas semanais",
+   "pergunta": "Quantas aulas semanais estão previstas no 5º período?",
+   "esperada": "O fluxograma indica 16 aulas semanais no 5º período.",
+   "termos": [
+    "16",
+    "aulas semanais"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, o 5º período tem 16 aulas semanais.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 2,
+   "termos_total": 2,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-034",
+   "nivel": "Fácil",
+   "tema": "Aulas semanais",
+   "pergunta": "Quantas aulas semanais estão previstas no 6º período?",
+   "esperada": "O fluxograma indica 21 aulas semanais no 6º período.",
+   "termos": [
+    "21",
+    "aulas semanais"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, o 6º período tem 21 aulas semanais.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 2,
+   "termos_total": 2,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-035",
+   "nivel": "Fácil",
+   "tema": "Aulas semanais",
+   "pergunta": "Quantas aulas semanais estão previstas no 7º período?",
+   "esperada": "O fluxograma indica 25 aulas semanais no 7º período.",
+   "termos": [
+    "25",
+    "aulas semanais"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, o 7º período tem 25 aulas semanais.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 2,
+   "termos_total": 2,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-036",
+   "nivel": "Fácil",
+   "tema": "Aulas semanais",
+   "pergunta": "Quantas aulas semanais estão previstas no 8º período?",
+   "esperada": "O fluxograma indica 12 aulas semanais no 8º período.",
+   "termos": [
+    "12",
+    "aulas semanais"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, o 8º período tem 12 aulas semanais.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 2,
+   "termos_total": 2,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-037",
+   "nivel": "Fácil",
+   "tema": "Código da disciplina",
+   "pergunta": "Qual é a disciplina identificada pelo código N004, e em qual período ela aparece?",
+   "esperada": "N004 corresponde a Ciências Exatas e Tecnologias, no 1º período, com 80 horas.",
+   "termos": [
+    "N004",
+    "Ciências Exatas e Tecnologias",
+    "1",
+    "80"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, N004 — Ciências Exatas e Tecnologias é do 1º período.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 3,
+   "termos_total": 4,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-038",
+   "nivel": "Fácil",
+   "tema": "Código da disciplina",
+   "pergunta": "Qual é a disciplina identificada pelo código N012, e em qual período ela aparece?",
+   "esperada": "N012 corresponde a Gestão da Inovação Tecnológica, no 1º período, com 80 horas.",
+   "termos": [
+    "N012",
+    "Gestão da Inovação Tecnológica",
+    "1",
+    "80"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, N012 — Gestão da Inovação Tecnológica é do 1º período.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 3,
+   "termos_total": 4,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-039",
+   "nivel": "Fácil",
+   "tema": "Código da disciplina",
+   "pergunta": "Qual é a disciplina identificada pelo código N013, e em qual período ela aparece?",
+   "esperada": "N013 corresponde a Laboratório de Computação Aplicada, no 1º período, com 80 horas.",
+   "termos": [
+    "N013",
+    "Laboratório de Computação Aplicada",
+    "1",
+    "80"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, N013 — Laboratório de Computação Aplicada é do 1º período.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 3,
+   "termos_total": 4,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-040",
+   "nivel": "Fácil",
+   "tema": "Código da disciplina",
+   "pergunta": "Qual é a disciplina identificada pelo código N014, e em qual período ela aparece?",
+   "esperada": "N014 corresponde a Lógica de Programação e Algoritmos I, no 1º período, com 80 horas.",
+   "termos": [
+    "N014",
+    "Lógica de Programação e Algoritmos I",
+    "1",
+    "80"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, N014 — Lógica de Programação e Algoritmos I é do 1º período.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 3,
+   "termos_total": 4,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-041",
+   "nivel": "Fácil",
+   "tema": "Código da disciplina",
+   "pergunta": "Qual é a disciplina identificada pelo código N001, e em qual período ela aparece?",
+   "esperada": "N001 corresponde a Linguagens e Pesquisa, no 2º período, com 80 horas.",
+   "termos": [
+    "N001",
+    "Linguagens e Pesquisa",
+    "2",
+    "80"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, N001 — Linguagens e Pesquisa é do 2º período.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 3,
+   "termos_total": 4,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-042",
+   "nivel": "Fácil",
+   "tema": "Código da disciplina",
+   "pergunta": "Qual é a disciplina identificada pelo código N032, e em qual período ela aparece?",
+   "esperada": "N032 corresponde a Matemática Aplicada, no 2º período, com 80 horas.",
+   "termos": [
+    "N032",
+    "Matemática Aplicada",
+    "2",
+    "80"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, N032 — Matemática Aplicada é do 2º período.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 3,
+   "termos_total": 4,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-043",
+   "nivel": "Fácil",
+   "tema": "Código da disciplina",
+   "pergunta": "Qual é a disciplina identificada pelo código N101, e em qual período ela aparece?",
+   "esperada": "N101 corresponde a Lógica de Programação de Algoritmos II, no 2º período, com 80 horas.",
+   "termos": [
+    "N101",
+    "Lógica de Programação de Algoritmos II",
+    "2",
+    "80"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, N101 — Lógica de Programação de Algoritmos II é do 2º período.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 3,
+   "termos_total": 4,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-044",
+   "nivel": "Fácil",
+   "tema": "Código da disciplina",
+   "pergunta": "Qual é a disciplina identificada pelo código N107, e em qual período ela aparece?",
+   "esperada": "N107 corresponde a Organização e Arquitetura de Computadores, no 2º período, com 80 horas.",
+   "termos": [
+    "N107",
+    "Organização e Arquitetura de Computadores",
+    "2",
+    "80"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, N107 — Organização e Arquitetura de Computadores é do 2º período.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 3,
+   "termos_total": 4,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-045",
+   "nivel": "Fácil",
+   "tema": "Código da disciplina",
+   "pergunta": "Qual é a disciplina identificada pelo código N008, e em qual período ela aparece?",
+   "esperada": "N008 corresponde a Homem, Cultura e Sociedade, no 3º período, com 80 horas.",
+   "termos": [
+    "N008",
+    "Homem",
+    "Cultura e Sociedade",
+    "3",
+    "80"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, N008 — Homem, Cultura e Sociedade é do 3º período.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 4,
+   "termos_total": 5,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-046",
+   "nivel": "Fácil",
+   "tema": "Código da disciplina",
+   "pergunta": "Qual é a disciplina identificada pelo código N134, e em qual período ela aparece?",
+   "esperada": "N134 corresponde a Banco de Dados, no 3º período, com 80 horas.",
+   "termos": [
+    "N134",
+    "Banco de Dados",
+    "3",
+    "80"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, N134 — Banco de Dados é do 3º período.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 3,
+   "termos_total": 4,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-047",
+   "nivel": "Fácil",
+   "tema": "Código da disciplina",
+   "pergunta": "Qual é a disciplina identificada pelo código N159, e em qual período ela aparece?",
+   "esperada": "N159 corresponde a Engenharia de Software, no 3º período, com 80 horas.",
+   "termos": [
+    "N159",
+    "Engenharia de Software",
+    "3",
+    "80"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, N159 — Engenharia de Software é do 3º período.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 3,
+   "termos_total": 4,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-048",
+   "nivel": "Fácil",
+   "tema": "Código da disciplina",
+   "pergunta": "Qual é a disciplina identificada pelo código N164, e em qual período ela aparece?",
+   "esperada": "N164 corresponde a Estrutura de Dados, no 3º período, com 80 horas.",
+   "termos": [
+    "N164",
+    "Estrutura de Dados",
+    "3",
+    "80"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, N164 — Estrutura de Dados é do 3º período.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 3,
+   "termos_total": 4,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-049",
+   "nivel": "Fácil",
+   "tema": "Código da disciplina",
+   "pergunta": "Qual é a disciplina identificada pelo código N048, e em qual período ela aparece?",
+   "esperada": "N048 corresponde a Gestão de Negócios e Liderança, no 4º período, com 80 horas.",
+   "termos": [
+    "N048",
+    "Gestão de Negócios e Liderança",
+    "4",
+    "80"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, N048 — Gestão de Negócios e Liderança é do 4º período.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 3,
+   "termos_total": 4,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-050",
+   "nivel": "Fácil",
+   "tema": "Código da disciplina",
+   "pergunta": "Qual é a disciplina identificada pelo código N279, e em qual período ela aparece?",
+   "esperada": "N279 corresponde a Programação para Internet, no 4º período, com 80 horas.",
+   "termos": [
+    "N279",
+    "Programação para Internet",
+    "4",
+    "80"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, N279 — Programação para Internet é do 4º período.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 3,
+   "termos_total": 4,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-051",
+   "nivel": "Fácil",
+   "tema": "Código da disciplina",
+   "pergunta": "Qual é a disciplina identificada pelo código N288, e em qual período ela aparece?",
+   "esperada": "N288 corresponde a Redes de Computadores, no 4º período, com 80 horas.",
+   "termos": [
+    "N288",
+    "Redes de Computadores",
+    "4",
+    "80"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, N288 — Redes de Computadores é do 4º período.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 3,
+   "termos_total": 4,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-052",
+   "nivel": "Fácil",
+   "tema": "Código da disciplina",
+   "pergunta": "Qual é a disciplina identificada pelo código N492, e em qual período ela aparece?",
+   "esperada": "N492 corresponde a Gestão de Pessoas, Empresas e Serviços, no 4º período, com 80 horas.",
+   "termos": [
+    "N492",
+    "Gestão de Pessoas",
+    "Empresas e Serviços",
+    "4",
+    "80"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, N492 — Gestão de Pessoas, Empresas e Serviços é do 4º período.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 4,
+   "termos_total": 5,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-053",
+   "nivel": "Fácil",
+   "tema": "Código da disciplina",
+   "pergunta": "Qual é a disciplina identificada pelo código N098, e em qual período ela aparece?",
+   "esperada": "N098 corresponde a Inteligência Artificial, no 5º período, com 80 horas.",
+   "termos": [
+    "N098",
+    "Inteligência Artificial",
+    "5",
+    "80"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, N098 — Inteligência Artificial é do 5º período.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 3,
+   "termos_total": 4,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-054",
+   "nivel": "Fácil",
+   "tema": "Código da disciplina",
+   "pergunta": "Qual é a disciplina identificada pelo código N207, e em qual período ela aparece?",
+   "esperada": "N207 corresponde a Temas Transversais e Atualidades, no 5º período, com 80 horas.",
+   "termos": [
+    "N207",
+    "Temas Transversais e Atualidades",
+    "5",
+    "80"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, N207 — Temas Transversais e Atualidades é do 5º período.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 3,
+   "termos_total": 4,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-055",
+   "nivel": "Fácil",
+   "tema": "Código da disciplina",
+   "pergunta": "Qual é a disciplina identificada pelo código N255, e em qual período ela aparece?",
+   "esperada": "N255 corresponde a Grafos e Algoritmos Computacionais, no 5º período, com 80 horas.",
+   "termos": [
+    "N255",
+    "Grafos e Algoritmos Computacionais",
+    "5",
+    "80"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, N255 — Grafos e Algoritmos Computacionais é do 5º período.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 3,
+   "termos_total": 4,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-056",
+   "nivel": "Fácil",
+   "tema": "Código da disciplina",
+   "pergunta": "Qual é a disciplina identificada pelo código N303, e em qual período ela aparece?",
+   "esperada": "N303 corresponde a Análise de Sistemas I, no 5º período, com 80 horas.",
+   "termos": [
+    "N303",
+    "Análise de Sistemas I",
+    "5",
+    "80"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, N303 — Análise de Sistemas I é do 5º período.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 3,
+   "termos_total": 4,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-057",
+   "nivel": "Fácil",
+   "tema": "Código da disciplina",
+   "pergunta": "Qual é a disciplina identificada pelo código N385, e em qual período ela aparece?",
+   "esperada": "N385 corresponde a Projeto e Desenvolvimento de Software, no 6º período, com 80 horas.",
+   "termos": [
+    "N385",
+    "Projeto e Desenvolvimento de Software",
+    "6",
+    "80"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, N385 — Projeto e Desenvolvimento de Software é do 6º período.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 3,
+   "termos_total": 4,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-058",
+   "nivel": "Fácil",
+   "tema": "Código da disciplina",
+   "pergunta": "Qual é a disciplina identificada pelo código N392, e em qual período ela aparece?",
+   "esperada": "N392 corresponde a Análise de Sistemas II, no 6º período, com 80 horas.",
+   "termos": [
+    "N392",
+    "Análise de Sistemas II",
+    "6",
+    "80"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, N392 — Análise de Sistemas II é do 6º período.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 3,
+   "termos_total": 4,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-059",
+   "nivel": "Fácil",
+   "tema": "Código da disciplina",
+   "pergunta": "Qual é a disciplina identificada pelo código N422, e em qual período ela aparece?",
+   "esperada": "N422 corresponde a Gerenciamento de Projeto em Tecnologia, no 6º período, com 80 horas.",
+   "termos": [
+    "N422",
+    "Gerenciamento de Projeto em Tecnologia",
+    "6",
+    "80"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, N422 — Gerenciamento de Projeto em Tecnologia é do 6º período.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 3,
+   "termos_total": 4,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-060",
+   "nivel": "Fácil",
+   "tema": "Código da disciplina",
+   "pergunta": "Qual é a disciplina identificada pelo código N476, e em qual período ela aparece?",
+   "esperada": "N476 corresponde a Estágio Supervisionado em Sistemas de Informação I, no 6º período, com 180 horas.",
+   "termos": [
+    "N476",
+    "Estágio Supervisionado em Sistemas de Informação I",
+    "6",
+    "180"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, N476 — Estágio Supervisionado em Sistemas de Informação I é do 6º período.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 3,
+   "termos_total": 4,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-061",
+   "nivel": "Fácil",
+   "tema": "Código da disciplina",
+   "pergunta": "Qual é a disciplina identificada pelo código N239, e em qual período ela aparece?",
+   "esperada": "N239 corresponde a Estágio Supervisionado em Sistemas de Informação II, no 7º período, com 180 horas.",
+   "termos": [
+    "N239",
+    "Estágio Supervisionado em Sistemas de Informação II",
+    "7",
+    "180"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, N239 — Estágio Supervisionado em Sistemas de Informação II é do 7º período.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 3,
+   "termos_total": 4,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-062",
+   "nivel": "Fácil",
+   "tema": "Código da disciplina",
+   "pergunta": "Qual é a disciplina identificada pelo código N245, e em qual período ela aparece?",
+   "esperada": "N245 corresponde a Segurança e Auditoria de Sistemas, no 7º período, com 80 horas.",
+   "termos": [
+    "N245",
+    "Segurança e Auditoria de Sistemas",
+    "7",
+    "80"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, N245 — Segurança e Auditoria de Sistemas é do 7º período.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 3,
+   "termos_total": 4,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-063",
+   "nivel": "Fácil",
+   "tema": "Código da disciplina",
+   "pergunta": "Qual é a disciplina identificada pelo código N379, e em qual período ela aparece?",
+   "esperada": "N379 corresponde a Sistemas de Computação Móvel, no 7º período, com 80 horas.",
+   "termos": [
+    "N379",
+    "Sistemas de Computação Móvel",
+    "7",
+    "80"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, N379 — Sistemas de Computação Móvel é do 7º período.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 3,
+   "termos_total": 4,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-064",
+   "nivel": "Fácil",
+   "tema": "Código da disciplina",
+   "pergunta": "Qual é a disciplina identificada pelo código N460, e em qual período ela aparece?",
+   "esperada": "N460 corresponde a Sistemas de Apoio a Decisão e Governança, no 7º período, com 80 horas.",
+   "termos": [
+    "N460",
+    "Sistemas de Apoio a Decisão e Governança",
+    "7",
+    "80"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, N460 — Sistemas de Apoio a Decisão e Governança é do 7º período.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 3,
+   "termos_total": 4,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-065",
+   "nivel": "Fácil",
+   "tema": "Código da disciplina",
+   "pergunta": "Qual é a disciplina identificada pelo código N535, e em qual período ela aparece?",
+   "esperada": "N535 corresponde a Trabalho de Conclusão de Curso em Sistemas de Informação I, no 7º período, com 80 horas.",
+   "termos": [
+    "N535",
+    "Trabalho de Conclusão de Curso em Sistemas de Informação I",
+    "7",
+    "80"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, N535 — Trabalho de Conclusão de Curso em Sistemas de Informação I é do 7º período.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 3,
+   "termos_total": 4,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-066",
+   "nivel": "Fácil",
+   "tema": "Código da disciplina",
+   "pergunta": "Qual é a disciplina identificada pelo código N461, e em qual período ela aparece?",
+   "esperada": "N461 corresponde a Sistemas Multimídias e Distribuídos, no 8º período, com 80 horas.",
+   "termos": [
+    "N461",
+    "Sistemas Multimídias e Distribuídos",
+    "8",
+    "80"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, N461 — Sistemas Multimídias e Distribuídos é do 8º período.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 3,
+   "termos_total": 4,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-067",
+   "nivel": "Fácil",
+   "tema": "Código da disciplina",
+   "pergunta": "Qual é a disciplina identificada pelo código N588, e em qual período ela aparece?",
+   "esperada": "N588 corresponde a Trabalho de Conclusão de Curso em Sistemas de Informação II, no 8º período, com 80 horas.",
+   "termos": [
+    "N588",
+    "Trabalho de Conclusão de Curso em Sistemas de Informação II",
+    "8",
+    "80"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, N588 — Trabalho de Conclusão de Curso em Sistemas de Informação II é do 8º período.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 3,
+   "termos_total": 4,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-068",
+   "nivel": "Fácil",
+   "tema": "Código da disciplina",
+   "pergunta": "Qual é a disciplina identificada pelo código OPT, e em qual período ela aparece?",
+   "esperada": "OPT corresponde a Optativa em Sistemas de Informação, no 8º período, com 80 horas.",
+   "termos": [
+    "OPT",
+    "Optativa em Sistemas de Informação",
+    "8",
+    "80"
+   ],
+   "resposta": "A disciplina identificada pelo código OPT é Optativa em Sistemas de Informação e aparece no 8º período.",
+   "modo": "llm",
+   "esclarecimento": null,
+   "segundos": 2.9,
+   "termos_achados": 3,
+   "termos_total": 4,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-069",
+   "nivel": "Médio",
+   "tema": "Pré-requisitos",
+   "pergunta": "Qual disciplina é pré-requisito para N101?",
+   "esperada": "N014 — Lógica de Programação e Algoritmos I, do 1º período, é pré-requisito de N101, do 2º.",
+   "termos": [
+    "N014",
+    "N101"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, os pré-requisitos de N101 — Lógica de Programação de Algoritmos II são:\n- N014 — Lógica de Programação e Algoritmos I (1º período)",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 2,
+   "termos_total": 2,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-070",
+   "nivel": "Médio",
+   "tema": "Pré-requisitos",
+   "pergunta": "Qual disciplina fica vinculada como dependente de Lógica de Programação e Algoritmos I (N014)?",
+   "esperada": "N101 — Lógica de Programação de Algoritmos II, no 2º período.",
+   "termos": [
+    "N101",
+    "N014"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, dependem de N014 — Lógica de Programação e Algoritmos I:\n- N101 — Lógica de Programação de Algoritmos II (2º período)",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 2,
+   "termos_total": 2,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-071",
+   "nivel": "Médio",
+   "tema": "Pré-requisitos",
+   "pergunta": "Qual é o pré-requisito de Análise de Sistemas II?",
+   "esperada": "N303 — Análise de Sistemas I, do 5º período.",
+   "termos": [
+    "N303",
+    "N392"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, os pré-requisitos de N392 — Análise de Sistemas II são:\n- N303 — Análise de Sistemas I (5º período)",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 2,
+   "termos_total": 2,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-072",
+   "nivel": "Médio",
+   "tema": "Pré-requisitos",
+   "pergunta": "Quais disciplinas listadas exigem Análise de Sistemas I (N303) como pré-requisito?",
+   "esperada": "N392 — Análise de Sistemas II e N535 — Trabalho de Conclusão de Curso em Sistemas de Informação I.",
+   "termos": [
+    "N392",
+    "N535",
+    "N303"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, dependem de N303 — Análise de Sistemas I:\n- N392 — Análise de Sistemas II (6º período)\n- N535 — Trabalho de Conclusão de Curso em Sistemas de Informação I (7º período)",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 3,
+   "termos_total": 3,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-073",
+   "nivel": "Médio",
+   "tema": "Pré-requisitos",
+   "pergunta": "Quais são os três pré-requisitos de TCC em Sistemas de Informação I (N535)?",
+   "esperada": "N279 — Programação para Internet; N303 — Análise de Sistemas I; N385 — Projeto e Desenvolvimento de Software.",
+   "termos": [
+    "N279",
+    "N303",
+    "N385"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, os pré-requisitos de N535 — Trabalho de Conclusão de Curso em Sistemas de Informação I são:\n- N279 — Programação para Internet (4º período)\n- N303 — Análise de Sistemas I (5º período)\n- N385 — Projeto e Desenvolvimento de Software (6º período)",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 3,
+   "termos_total": 3,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-074",
+   "nivel": "Médio",
+   "tema": "Pré-requisitos",
+   "pergunta": "Em quais períodos estão distribuídos os pré-requisitos do TCC I?",
+   "esperada": "N279 fica no 4º, N303 no 5º e N385 no 6º período.",
+   "termos": [
+    "4º",
+    "5º",
+    "6º",
+    "N535"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, os pré-requisitos de N535 — Trabalho de Conclusão de Curso em Sistemas de Informação I são:\n- N279 — Programação para Internet (4º período)\n- N303 — Análise de Sistemas I (5º período)\n- N385 — Projeto e Desenvolvimento de Software (6º período)",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 4,
+   "termos_total": 4,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-075",
+   "nivel": "Médio",
+   "tema": "Pré-requisitos",
+   "pergunta": "Qual é a disciplina que exige simultaneamente N279, N303 e N385?",
+   "esperada": "N535 — Trabalho de Conclusão de Curso em Sistemas de Informação I, do 7º período.",
+   "termos": [
+    "N535",
+    "N279",
+    "N303",
+    "N385"
+   ],
+   "resposta": "A disciplina que exige simultaneamente N279, N303 e N385 é N535 (7º PER.).",
+   "modo": "llm",
+   "esclarecimento": null,
+   "segundos": 3.3,
+   "termos_achados": 4,
+   "termos_total": 4,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-076",
+   "nivel": "Médio",
+   "tema": "Pré-requisitos",
+   "pergunta": "Qual é o pré-requisito indicado para TCC II?",
+   "esperada": "N535 — Trabalho de Conclusão de Curso em Sistemas de Informação I.",
+   "termos": [
+    "N535",
+    "N588"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, os pré-requisitos de N588 — Trabalho de Conclusão de Curso em Sistemas de Informação II são:\n- N535 — Trabalho de Conclusão de Curso em Sistemas de Informação I (7º período)",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 2,
+   "termos_total": 2,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-077",
+   "nivel": "Médio",
+   "tema": "Pré-requisitos",
+   "pergunta": "O currículo permite cursar TCC II antes de concluir TCC I?",
+   "esperada": "Não segundo a cadeia de pré-requisitos: N535 (TCC I) é pré-requisito de N588 (TCC II).",
+   "termos": [
+    "N535",
+    "N588",
+    "pré-requisito"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, N535 — Trabalho de Conclusão de Curso em Sistemas de Informação I (7º período) é pré-requisito de N588 — Trabalho de Conclusão de Curso em Sistemas de Informação II (8º período): é preciso cursar N535 antes de N588.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 3,
+   "termos_total": 3,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-078",
+   "nivel": "Médio",
+   "tema": "Pré-requisitos",
+   "pergunta": "Qual é a sequência de disciplinas de TCC e seus respectivos períodos?",
+   "esperada": "TCC I é N535, no 7º período; TCC II é N588, no 8º período, e depende de N535.",
+   "termos": [
+    "N535",
+    "N588",
+    "7º",
+    "8º"
+   ],
+   "resposta": "A sequência de disciplinas de TCC e seus respectivos períodos é a seguinte:\n\n- 7º período: N535 - Trabalho de Conclusão de Curso em Sistemas de Informação I\n- 8º período: N588 - Trabalho de Conclusão de Curso em Sistemas de Informação II",
+   "modo": "llm",
+   "esclarecimento": null,
+   "segundos": 3.9,
+   "termos_achados": 4,
+   "termos_total": 4,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-079",
+   "nivel": "Médio",
+   "tema": "Pré-requisitos",
+   "pergunta": "Alguma disciplina do 1º período serve como pré-requisito explícito para uma do 2º?",
+   "esperada": "Sim. N014 (Lógica de Programação e Algoritmos I) é pré-requisito de N101 (Lógica de Programação de Algoritmos II).",
+   "termos": [
+    "N014",
+    "N101"
+   ],
+   "resposta": "Sim. Na matriz curricular 109AN de Sistemas de Informação:\n- N014 — Lógica de Programação e Algoritmos I é pré-requisito de N101 — Lógica de Programação de Algoritmos II (2º período)",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 2,
+   "termos_total": 2,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-080",
+   "nivel": "Médio",
+   "tema": "Pré-requisitos",
+   "pergunta": "Qual disciplina do 6º período aparece como pré-requisito de uma do 7º?",
+   "esperada": "N385 — Projeto e Desenvolvimento de Software, pré-requisito de N535 — TCC I.",
+   "termos": [
+    "N385",
+    "N535"
+   ],
+   "resposta": "Sim. Na matriz curricular 109AN de Sistemas de Informação:\n- N385 — Projeto e Desenvolvimento de Software é pré-requisito de N535 — Trabalho de Conclusão de Curso em Sistemas de Informação I (7º período)",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 2,
+   "termos_total": 2,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-081",
+   "nivel": "Médio",
+   "tema": "Pré-requisitos",
+   "pergunta": "O que liga Programação para Internet (N279) ao TCC I?",
+   "esperada": "N279, ofertada no 4º período, é um dos três pré-requisitos explícitos de N535 (TCC I), no 7º.",
+   "termos": [
+    "N279",
+    "N535"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, N279 — Programação para Internet (4º período) é pré-requisito de N535 — Trabalho de Conclusão de Curso em Sistemas de Informação I (7º período): é preciso cursar N279 antes de N535.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 2,
+   "termos_total": 2,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-082",
+   "nivel": "Médio",
+   "tema": "Pré-requisitos",
+   "pergunta": "Qual disciplina do 5º período é pré-requisito tanto do 6º quanto do 7º?",
+   "esperada": "N303 — Análise de Sistemas I: pré-requisito de N392, do 6º, e N535, do 7º.",
+   "termos": [
+    "N303",
+    "N392",
+    "N535"
+   ],
+   "resposta": "Sim. Na matriz curricular 109AN de Sistemas de Informação:\n- N303 — Análise de Sistemas I é pré-requisito de N392 — Análise de Sistemas II (6º período), N535 — Trabalho de Conclusão de Curso em Sistemas de Informação I (7º período)",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 3,
+   "termos_total": 3,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-083",
+   "nivel": "Difícil",
+   "tema": "Pré-requisitos",
+   "pergunta": "Que sequência de pré-requisitos precisa ser considerada para sair das disciplinas de base até TCC II?",
+   "esperada": "Para cursar N535 (TCC I), constam N279 (4º), N303 (5º) e N385 (6º); depois, para N588 (TCC II), exige-se N535. São as relações explicitadas no fluxograma.",
+   "termos": [
+    "N279",
+    "N303",
+    "N385",
+    "N535",
+    "N588"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, a cadeia de pré-requisitos até N588 — Trabalho de Conclusão de Curso em Sistemas de Informação II é:\n- Para cursar N535 — Trabalho de Conclusão de Curso em Sistemas de Informação I (7º período): N279 (4º), N303 (5º), N385 (6º)\n- Para cursar N588 — Trabalho de Conclusão de Curso em Sistemas de Informação II (8º período): N535 (7º)",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 5,
+   "termos_total": 5,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-084",
+   "nivel": "Fácil",
+   "tema": "Optativas",
+   "pergunta": "Quantas horas de disciplinas optativas são exigidas, no mínimo?",
+   "esperada": "80 horas, equivalentes a quatro créditos.",
+   "termos": [
+    "80",
+    "4 créditos"
+   ],
+   "resposta": "De acordo com o trecho 1, o mínimo de horas optativas exigidas é de 80 horas / 4 créditos.",
+   "modo": "llm",
+   "esclarecimento": null,
+   "segundos": 2.8,
+   "termos_achados": 2,
+   "termos_total": 2,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-085",
+   "nivel": "Médio",
+   "tema": "Optativas",
+   "pergunta": "Em qual período aparece o componente Optativa em Sistemas de Informação?",
+   "esperada": "No 8º período, indicado como OPT, com 80 horas.",
+   "termos": [
+    "8º",
+    "OPT",
+    "80"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, OPT — Optativa em Sistemas de Informação é do 8º período.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 2,
+   "termos_total": 3,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-086",
+   "nivel": "Fácil",
+   "tema": "Optativas",
+   "pergunta": "Qual disciplina é citada nominalmente como optativa ofertada semestralmente?",
+   "esperada": "LIBRAS (Língua Brasileira de Sinais).",
+   "termos": [
+    "LIBRAS"
+   ],
+   "resposta": "A disciplina citada nominalmente como optativa ofertada semestralmente é a LIBRAS (Língua Brasileira de Sinais).",
+   "modo": "llm",
+   "esclarecimento": null,
+   "segundos": 3.2,
+   "termos_achados": 1,
+   "termos_total": 1,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-087",
+   "nivel": "Médio",
+   "tema": "Optativas",
+   "pergunta": "Qual decreto é mencionado na observação sobre LIBRAS?",
+   "esperada": "Decreto nº 5.626, de 22/12/2005.",
+   "termos": [
+    "5.626",
+    "22/12/2005"
+   ],
+   "resposta": "O decreto mencionado na observação sobre LIBRAS é o Decreto nº 5.626 de 22-12-2005.",
+   "modo": "llm",
+   "esclarecimento": null,
+   "segundos": 4.7,
+   "termos_achados": 1,
+   "termos_total": 2,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-088",
+   "nivel": "Médio",
+   "tema": "Marcação OL",
+   "pergunta": "Quais componentes curriculares estão marcados com (OL)?",
+   "esperada": "N004 (Ciências Exatas e Tecnologias), N001 (Linguagens e Pesquisa), N008 (Homem, Cultura e Sociedade), N048 (Gestão de Negócios e Liderança), N207 (Temas Transversais e Atualidades), N460 (Sistemas de Apoio a Decisão e Governança) e N461 (Sistemas Multimídias e Distribuídos).",
+   "termos": [
+    "N004",
+    "N001",
+    "N008",
+    "N048",
+    "N207",
+    "N460",
+    "N461"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, 7 disciplinas têm a marcação (OL):\n- N004 — Ciências Exatas e Tecnologias (1º período)\n- N001 — Linguagens e Pesquisa (2º período)\n- N008 — Homem, Cultura e Sociedade (3º período)\n- N048 — Gestão de Negócios e Liderança (4º período)\n- N207 — Temas Transversais e Atualidades (5º período)\n- N460 — Sistemas de Apoio a Decisão e Governança (7º período)\n- N461 — Sistemas Multimídias e Distribuídos (8º período)\nO documento não traz a legenda dessa marcação.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 7,
+   "termos_total": 7,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-089",
+   "nivel": "Difícil",
+   "tema": "Marcação OL",
+   "pergunta": "Quantas disciplinas estão identificadas com a sigla (OL) no fluxograma?",
+   "esperada": "Sete disciplinas.",
+   "termos": [
+    "7",
+    "OL"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, 7 disciplinas têm a marcação (OL):\n- N004 — Ciências Exatas e Tecnologias (1º período)\n- N001 — Linguagens e Pesquisa (2º período)\n- N008 — Homem, Cultura e Sociedade (3º período)\n- N048 — Gestão de Negócios e Liderança (4º período)\n- N207 — Temas Transversais e Atualidades (5º período)\n- N460 — Sistemas de Apoio a Decisão e Governança (7º período)\n- N461 — Sistemas Multimídias e Distribuídos (8º período)\nO documento não traz a legenda dessa marcação.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 2,
+   "termos_total": 2,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-090",
+   "nivel": "Médio",
+   "tema": "Marcação OL",
+   "pergunta": "O 6º período possui algum componente identificado com (OL)?",
+   "esperada": "Não. Nenhuma das quatro disciplinas listadas no 6º período aparece marcada com (OL).",
+   "termos": [
+    "6º",
+    "OL",
+    "não"
+   ],
+   "resposta": "Não. Na matriz curricular 109AN de Sistemas de Informação, nenhuma disciplina do 6º período tem a marcação (OL).",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 3,
+   "termos_total": 3,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-091",
+   "nivel": "Médio",
+   "tema": "Estágio",
+   "pergunta": "Quais disciplinas da matriz têm carga horária de 180 horas?",
+   "esperada": "N476 — Estágio Supervisionado em Sistemas de Informação I, no 6º período; e N239 — Estágio Supervisionado em Sistemas de Informação II, no 7º.",
+   "termos": [
+    "N476",
+    "N239",
+    "180"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação:\n2 componentes têm 180 horas:\n- N476 — Estágio Supervisionado em Sistemas de Informação I (6º período)\n- N239 — Estágio Supervisionado em Sistemas de Informação II (7º período)",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 3,
+   "termos_total": 3,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-092",
+   "nivel": "Fácil",
+   "tema": "Estágio",
+   "pergunta": "Em qual período está o Estágio Supervisionado em Sistemas de Informação I?",
+   "esperada": "No 6º período, código N476, com 180 horas.",
+   "termos": [
+    "6º",
+    "N476",
+    "180"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, N476 — Estágio Supervisionado em Sistemas de Informação I é do 6º período.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 2,
+   "termos_total": 3,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-093",
+   "nivel": "Fácil",
+   "tema": "Estágio",
+   "pergunta": "Em qual período está o Estágio Supervisionado em Sistemas de Informação II?",
+   "esperada": "No 7º período, código N239, com 180 horas.",
+   "termos": [
+    "7º",
+    "N239",
+    "180"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, N239 — Estágio Supervisionado em Sistemas de Informação II é do 7º período.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 2,
+   "termos_total": 3,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-094",
+   "nivel": "Difícil",
+   "tema": "Estágio",
+   "pergunta": "Qual é a soma das horas das duas disciplinas de estágio supervisionado?",
+   "esperada": "180 + 180 = 360 horas, coincidindo com o mínimo de estágio indicado na totalização.",
+   "termos": [
+    "360",
+    "180",
+    "estágio"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação: 180 (N476) + 180 (N239) = 360 horas. É o mesmo valor do mínimo indicado no quadro de totalização (360 h).",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 2,
+   "termos_total": 3,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-095",
+   "nivel": "Médio",
+   "tema": "Carga por período",
+   "pergunta": "Qual período tem a maior carga horária de disciplinas?",
+   "esperada": "O 7º período, com 500 horas de disciplinas.",
+   "termos": [
+    "7º",
+    "500"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, a maior carga é a do 7º período, com 500 h de disciplinas (sem as atividades complementares). Por período: 1º: 320; 2º: 320; 3º: 320; 4º: 320; 5º: 320; 6º: 420; 7º: 500; 8º: 240.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 2,
+   "termos_total": 2,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-096",
+   "nivel": "Médio",
+   "tema": "Carga por período",
+   "pergunta": "Qual período tem a menor carga horária de disciplinas?",
+   "esperada": "O 8º período, com 240 horas de disciplinas.",
+   "termos": [
+    "8º",
+    "240"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, a menor carga é a do 8º período, com 240 h de disciplinas (sem as atividades complementares). Por período: 1º: 320; 2º: 320; 3º: 320; 4º: 320; 5º: 320; 6º: 420; 7º: 500; 8º: 240.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 2,
+   "termos_total": 2,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-097",
+   "nivel": "Médio",
+   "tema": "Carga por período",
+   "pergunta": "Os cinco primeiros períodos apresentam a mesma carga de disciplinas?",
+   "esperada": "Sim. Cada um do 1º ao 5º tem 320 horas de disciplinas.",
+   "termos": [
+    "1º",
+    "5º",
+    "320"
+   ],
+   "resposta": "Sim. Na matriz curricular 109AN de Sistemas de Informação: 1º: 320; 2º: 320; 3º: 320; 4º: 320; 5º: 320 h de disciplinas (sem as atividades complementares).",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 3,
+   "termos_total": 3,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-098",
+   "nivel": "Difícil",
+   "tema": "Cálculo de carga horária",
+   "pergunta": "Quantas horas a mais tem o 6º período em relação ao 5º, sem atividades complementares?",
+   "esperada": "420 − 320 = 100 horas a mais.",
+   "termos": [
+    "420",
+    "320",
+    "100"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, o 6º período tem 420 h de disciplinas (sem as atividades complementares) e o 5º tem 320: 420 − 320 = 100 a mais no 6º período.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 3,
+   "termos_total": 3,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-099",
+   "nivel": "Difícil",
+   "tema": "Cálculo de carga horária",
+   "pergunta": "Qual a diferença de carga horária de disciplinas entre o 7º e o 6º período?",
+   "esperada": "500 − 420 = 80 horas a mais no 7º período.",
+   "termos": [
+    "500",
+    "420",
+    "80"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, o 7º período tem 500 h de disciplinas (sem as atividades complementares) e o 6º tem 420: 500 − 420 = 80 a mais no 7º período.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 3,
+   "termos_total": 3,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-100",
+   "nivel": "Difícil",
+   "tema": "Cálculo de carga horária",
+   "pergunta": "Quantas horas a menos de disciplinas há no 8º período em comparação com o 7º?",
+   "esperada": "500 − 240 = 260 horas a menos no 8º período.",
+   "termos": [
+    "500",
+    "240",
+    "260"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, o 7º período tem 500 h de disciplinas (sem as atividades complementares) e o 8º tem 240: 500 − 240 = 260 a mais no 7º período.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 3,
+   "termos_total": 3,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-101",
+   "nivel": "Difícil",
+   "tema": "Cálculo de carga horária",
+   "pergunta": "Qual é a soma de todas as horas de disciplinas do 1º ao 8º período, antes das atividades complementares?",
+   "esperada": "2.760 horas: 320×5 + 420 + 500 + 240.",
+   "termos": [
+    "2760",
+    "320",
+    "420",
+    "500",
+    "240"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, a soma do 1º ao 8º período é 320 + 320 + 320 + 320 + 320 + 420 + 500 + 240 = 2760 h de disciplinas (sem as atividades complementares).",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 5,
+   "termos_total": 5,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-102",
+   "nivel": "Difícil",
+   "tema": "Atividades complementares",
+   "pergunta": "Somando 30 horas de atividades complementares por período, qual é o total ao final dos oito períodos?",
+   "esperada": "8 × 30 = 240 horas de atividades complementares.",
+   "termos": [
+    "30",
+    "8",
+    "240"
+   ],
+   "resposta": "Ao somar 30 horas de atividades complementares por período, ao final dos oito períodos, o total será de 240 horas, conforme informado no Trecho 2.",
+   "modo": "llm",
+   "esclarecimento": null,
+   "segundos": 4.5,
+   "termos_achados": 2,
+   "termos_total": 3,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-103",
+   "nivel": "Difícil",
+   "tema": "Totalização",
+   "pergunta": "Como o currículo chega às 3.000 horas mínimas a partir das cargas dos períodos?",
+   "esperada": "São 2.760 horas de disciplinas e mais 240 horas de atividades complementares, totalizando 3.000 horas.",
+   "termos": [
+    "2760",
+    "240",
+    "3000"
+   ],
+   "resposta": "A matriz curricular 109AN de Sistemas de Informação exige no mínimo 3000 horas.\nPelos períodos: 2760 h de disciplinas (soma do 1º ao 8º período) + 240 h de atividades complementares = 3000 h.\nPelo quadro de totalização: Horas Teóricas 2320 + Mínimo de Atividades Complementares 240 + Mínimo de Horas de Estágio 360 + Mínimo de Horas Optativas 80 = 3000 h. Com 0 h: Horas Práticas, Pesquisa/Projetos/TCC.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 3,
+   "termos_total": 3,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-104",
+   "nivel": "Difícil",
+   "tema": "Cálculo de carga horária",
+   "pergunta": "Quantas horas de disciplinas estão distribuídas nos cinco primeiros períodos?",
+   "esperada": "5 × 320 = 1.600 horas de disciplinas.",
+   "termos": [
+    "1600",
+    "320",
+    "5"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, a soma do 1º ao 5º período é 320 + 320 + 320 + 320 + 320 = 1600 h de disciplinas (sem as atividades complementares).",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 3,
+   "termos_total": 3,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-105",
+   "nivel": "Difícil",
+   "tema": "Cálculo de carga horária",
+   "pergunta": "Qual é a soma das horas de disciplinas dos 6º, 7º e 8º períodos?",
+   "esperada": "420 + 500 + 240 = 1.160 horas.",
+   "termos": [
+    "1160",
+    "420",
+    "500",
+    "240"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação, a soma do 6º ao 8º período é 420 + 500 + 240 = 1160 h de disciplinas (sem as atividades complementares).",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 4,
+   "termos_total": 4,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-106",
+   "nivel": "Difícil",
+   "tema": "Distribuição curricular",
+   "pergunta": "Quantos componentes curriculares aparecem no fluxograma, contando estágio, TCC e a optativa?",
+   "esperada": "32 componentes: quatro em cada um dos seis primeiros períodos, cinco no 7º e três no 8º.",
+   "termos": [
+    "32",
+    "4",
+    "5",
+    "3"
+   ],
+   "resposta": "A matriz curricular 109AN de Sistemas de Informação lista 32 componentes curriculares nos oito períodos: 31 não identificados como optativos e 1 optativo. Esse total inclui dois estágios supervisionados e dois Trabalhos de Conclusão de Curso.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 2,
+   "termos_total": 4,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-107",
+   "nivel": "Difícil",
+   "tema": "Distribuição curricular",
+   "pergunta": "Quantos componentes possuem 80 horas, e quantos possuem 180 horas?",
+   "esperada": "30 componentes têm 80 horas cada; dois componentes de estágio têm 180 horas cada.",
+   "termos": [
+    "30",
+    "80",
+    "2",
+    "180"
+   ],
+   "resposta": "Na matriz curricular 109AN de Sistemas de Informação:\n30 componentes têm 80 horas.\n2 componentes têm 180 horas:\n- N476 — Estágio Supervisionado em Sistemas de Informação I (6º período)\n- N239 — Estágio Supervisionado em Sistemas de Informação II (7º período)",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 4,
+   "termos_total": 4,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-108",
+   "nivel": "Difícil",
+   "tema": "Totalização",
+   "pergunta": "Como se decompõem as 3.000 horas mínimas nas categorias do quadro final?",
+   "esperada": "2.320 horas teóricas + 360 horas de estágio + 80 horas optativas + 240 horas de atividades complementares = 3.000 horas. O quadro também apresenta 0 hora na categoria de práticas e 0 hora na linha Pesquisa/Projetos/TCC.",
+   "termos": [
+    "2320",
+    "360",
+    "80",
+    "240",
+    "3000"
+   ],
+   "resposta": "A matriz curricular 109AN de Sistemas de Informação exige no mínimo 3000 horas.\nPelos períodos: 2760 h de disciplinas (soma do 1º ao 8º período) + 240 h de atividades complementares = 3000 h.\nPelo quadro de totalização: Horas Teóricas 2320 + Mínimo de Atividades Complementares 240 + Mínimo de Horas de Estágio 360 + Mínimo de Horas Optativas 80 = 3000 h. Com 0 h: Horas Práticas, Pesquisa/Projetos/TCC.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 5,
+   "termos_total": 5,
+   "veredito": "certo",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-109",
+   "nivel": "Fora do escopo",
+   "tema": "Professores",
+   "pergunta": "Quem é o professor responsável pela disciplina de Inteligência Artificial (N098)?",
+   "esperada": "Não consta o nome do professor no fluxograma da grade curricular.",
+   "termos": [
+    "professor",
+    "não consta"
+   ],
+   "resposta": "Não localizei essa informação nos documentos oficiais da UNIVERSO disponíveis para consulta. Para dúvidas individuais ou não previstas nos documentos, acesse o Espaço do Aluno ou fale com a central de atendimento pelo 0800 721 0251 ou pelo e-mail contato@universo.com.br.",
+   "modo": "sem_resultado",
+   "esclarecimento": null,
+   "segundos": 5.2,
+   "termos_achados": 0,
+   "termos_total": 2,
+   "veredito": "recusa_correta",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-110",
+   "nivel": "Fora do escopo",
+   "tema": "Ementas",
+   "pergunta": "Qual é o conteúdo programático completo de Engenharia de Software (N159)?",
+   "esperada": "O fluxograma informa o nome, o código, o período e a carga horária da disciplina, mas não apresenta sua ementa ou conteúdo programático.",
+   "termos": [
+    "ementa",
+    "não apresenta"
+   ],
+   "resposta": "Não localizei essa informação nos documentos oficiais da UNIVERSO disponíveis para consulta. Para dúvidas individuais ou não previstas nos documentos, acesse o Espaço do Aluno ou fale com a central de atendimento pelo 0800 721 0251 ou pelo e-mail contato@universo.com.br.",
+   "modo": "sem_resultado",
+   "esclarecimento": null,
+   "segundos": 4.4,
+   "termos_achados": 0,
+   "termos_total": 2,
+   "veredito": "recusa_correta",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-111",
+   "nivel": "Fora do escopo",
+   "tema": "Calendário",
+   "pergunta": "Em que dia começam as aulas de Sistemas de Informação no segundo semestre de 2026?",
+   "esperada": "O fluxograma mostra o início da versão curricular como 2019-1, não o calendário de aulas de 2026. Para essa data, consulte o calendário acadêmico aplicável.",
+   "termos": [
+    "2019-1",
+    "calendário"
+   ],
+   "resposta": "Não localizei essa informação nos documentos oficiais da UNIVERSO disponíveis para consulta. Para dúvidas individuais ou não previstas nos documentos, acesse o Espaço do Aluno ou fale com a central de atendimento pelo 0800 721 0251 ou pelo e-mail contato@universo.com.br. Datas e prazos, como entregas de atividades e períodos de provas, são divulgados no Calendário Letivo, disponível no Espaço do Aluno.",
+   "modo": "sem_resultado",
+   "esclarecimento": null,
+   "segundos": 2.9,
+   "termos_achados": 1,
+   "termos_total": 2,
+   "veredito": "recusa_correta",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-112",
+   "nivel": "Fora do escopo",
+   "tema": "Mensalidades",
+   "pergunta": "Qual é o valor da mensalidade do curso de Sistemas de Informação?",
+   "esperada": "A grade curricular não informa o valor de mensalidades. Essa informação deve ser consultada nos canais financeiros da instituição.",
+   "termos": [
+    "mensalidade",
+    "não informa"
+   ],
+   "resposta": "Não localizei essa informação nos documentos oficiais da UNIVERSO disponíveis para consulta. Para dúvidas individuais ou não previstas nos documentos, acesse o Espaço do Aluno ou fale com a central de atendimento pelo 0800 721 0251 ou pelo e-mail contato@universo.com.br.",
+   "modo": "sem_resultado",
+   "esclarecimento": null,
+   "segundos": 4.2,
+   "termos_achados": 0,
+   "termos_total": 2,
+   "veredito": "recusa_correta",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-113",
+   "nivel": "Fora do escopo",
+   "tema": "Pré-requisitos",
+   "pergunta": "É obrigatório concluir Estágio I (N476) antes de cursar Estágio II (N239)?",
+   "esperada": "A grade apresenta Estágio I no 6º e Estágio II no 7º período, mas não registra N476 como pré-requisito de N239. Não é possível confirmar essa obrigatoriedade apenas pelo documento.",
+   "termos": [
+    "N476",
+    "N239",
+    "não registra"
+   ],
+   "resposta": "A matriz curricular 109AN de Sistemas de Informação não registra pré-requisito entre N476 — Estágio Supervisionado em Sistemas de Informação I (6º período) e N239 — Estágio Supervisionado em Sistemas de Informação II (7º período), em nenhum dos dois sentidos.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 3,
+   "termos_total": 3,
+   "veredito": "recusa_correta",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-114",
+   "nivel": "Fora do escopo",
+   "tema": "Pré-requisitos",
+   "pergunta": "Quais pré-requisitos formais preciso cumprir para cursar Estágio I (N476)?",
+   "esperada": "O fluxograma não indica pré-requisitos explícitos para N476; outras normas ou regras de matrícula precisariam ser consultadas para confirmar exigências adicionais.",
+   "termos": [
+    "N476",
+    "não indica"
+   ],
+   "resposta": "A matriz curricular 109AN de Sistemas de Informação não indica pré-requisito para N476 — Estágio Supervisionado em Sistemas de Informação I.",
+   "modo": "validado",
+   "esclarecimento": null,
+   "segundos": 0.0,
+   "termos_achados": 2,
+   "termos_total": 2,
+   "veredito": "recusa_correta",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-115",
+   "nivel": "Fora do escopo",
+   "tema": "Avaliação",
+   "pergunta": "Qual é a nota mínima para passar em Banco de Dados (N134)?",
+   "esperada": "O fluxograma não apresenta critérios de aprovação ou notas mínimas. É necessário consultar o regulamento acadêmico pertinente.",
+   "termos": [
+    "nota mínima",
+    "não apresenta"
+   ],
+   "resposta": "Não localizei essa informação nos documentos oficiais da UNIVERSO disponíveis para consulta. Para dúvidas individuais ou não previstas nos documentos, acesse o Espaço do Aluno ou fale com a central de atendimento pelo 0800 721 0251 ou pelo e-mail contato@universo.com.br.",
+   "modo": "sem_resultado",
+   "esclarecimento": "Você está se referindo às disciplinas presenciais ou à modalidade EaD?",
+   "segundos": 3.1,
+   "termos_achados": 0,
+   "termos_total": 2,
+   "veredito": "recusa_correta",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-116",
+   "nivel": "Fora do escopo",
+   "tema": "Horários",
+   "pergunta": "Em quais dias e horários são ministradas as aulas de Grafos e Algoritmos Computacionais (N255)?",
+   "esperada": "O documento informa a disciplina no 5º período com 80 horas, mas não apresenta dias, horários ou turmas.",
+   "termos": [
+    "N255",
+    "horário",
+    "não apresenta"
+   ],
+   "resposta": "Não localizei essa informação nos documentos oficiais da UNIVERSO disponíveis para consulta. Para dúvidas individuais ou não previstas nos documentos, acesse o Espaço do Aluno ou fale com a central de atendimento pelo 0800 721 0251 ou pelo e-mail contato@universo.com.br.",
+   "modo": "sem_resultado",
+   "esclarecimento": null,
+   "segundos": 5.6,
+   "termos_achados": 0,
+   "termos_total": 3,
+   "veredito": "recusa_correta",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-117",
+   "nivel": "Fora do escopo",
+   "tema": "TCC",
+   "pergunta": "Qual tema de trabalho de conclusão de curso é obrigatório para todos os alunos?",
+   "esperada": "O fluxograma mostra as disciplinas TCC I e TCC II, mas não estabelece tema obrigatório.",
+   "termos": [
+    "TCC",
+    "tema",
+    "não estabelece"
+   ],
+   "resposta": "Não localizei essa informação nos documentos oficiais da UNIVERSO disponíveis para consulta. Para dúvidas individuais ou não previstas nos documentos, acesse o Espaço do Aluno ou fale com a central de atendimento pelo 0800 721 0251 ou pelo e-mail contato@universo.com.br.",
+   "modo": "sem_resultado",
+   "esclarecimento": null,
+   "segundos": 6.4,
+   "termos_achados": 0,
+   "termos_total": 3,
+   "veredito": "recusa_correta",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-118",
+   "nivel": "Fora do escopo",
+   "tema": "Estágio",
+   "pergunta": "Em quais empresas os alunos podem realizar o estágio supervisionado?",
+   "esperada": "O fluxograma especifica as disciplinas de estágio e sua carga horária, mas não lista empresas conveniadas ou locais de estágio.",
+   "termos": [
+    "estágio",
+    "empresas",
+    "não lista"
+   ],
+   "resposta": "Sobre esse assunto, o documento oficial diz:\n\n“§ 1º A Universidade Salgado de Oliveira - UNIVERSO - firmará convênios com empresas, instituições, entidades de direito público ou privado, objetivando a realização de estágios, pesquisas, experimentações e/ou outras atividades de interesse.”\n\n(Manual Do Aluno – 15. ESTÁGIO SUPERVISIONADO CURRICULAR)",
+   "modo": "citacao",
+   "esclarecimento": null,
+   "segundos": 7.5,
+   "termos_achados": 2,
+   "termos_total": 3,
+   "veredito": "recusa_correta",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-119",
+   "nivel": "Fora do escopo",
+   "tema": "Siglas",
+   "pergunta": "A marcação (OL) garante que a disciplina é totalmente online?",
+   "esperada": "O fluxograma usa a marcação (OL), mas não fornece legenda que defina seu significado ou confirme modalidade integralmente online. É necessário verificar a informação em outra fonte oficial.",
+   "termos": [
+    "OL",
+    "legenda",
+    "não define"
+   ],
+   "resposta": "Não localizei essa informação nos documentos oficiais da UNIVERSO disponíveis para consulta. Para dúvidas individuais ou não previstas nos documentos, acesse o Espaço do Aluno ou fale com a central de atendimento pelo 0800 721 0251 ou pelo e-mail contato@universo.com.br.",
+   "modo": "sem_resultado",
+   "esclarecimento": null,
+   "segundos": 4.2,
+   "termos_achados": 0,
+   "termos_total": 3,
+   "veredito": "recusa_correta",
+   "classe_do_erro": ""
+  },
+  {
+   "id": "GC-120",
+   "nivel": "Fora do escopo",
+   "tema": "Optativas",
+   "pergunta": "Quais são todas as opções de disciplinas optativas disponíveis neste semestre?",
+   "esperada": "O fluxograma apresenta uma vaga de optativa no 8º período e menciona LIBRAS como ofertada semestralmente, mas não traz a lista completa de ofertas do semestre corrente.",
+   "termos": [
+    "LIBRAS",
+    "optativa",
+    "não lista"
+   ],
+   "resposta": "Não localizei essa informação nos documentos oficiais da UNIVERSO disponíveis para consulta. Para dúvidas individuais ou não previstas nos documentos, acesse o Espaço do Aluno ou fale com a central de atendimento pelo 0800 721 0251 ou pelo e-mail contato@universo.com.br.",
+   "modo": "sem_resultado",
+   "esclarecimento": null,
+   "segundos": 5.9,
+   "termos_achados": 0,
+   "termos_total": 3,
+   "veredito": "recusa_correta",
+   "classe_do_erro": ""
+  }
+ ]
+}
