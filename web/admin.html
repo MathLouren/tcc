@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Administração – Chatbot UNIVERSO</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <!-- Login -->
+  <main id="tela-login" class="login" hidden>
+    <form id="form-login" class="login-cartao">
+      <div class="marca marca-clara"><span class="logo" aria-hidden="true">UNV</span></div>
+      <h1>Administração</h1>
+      <p class="login-sub">Chatbot Institucional UNIVERSO</p>
+      <p id="login-aviso" class="alerta alerta-erro" role="alert" hidden></p>
+      <label class="campo">E-mail
+        <input id="email" type="email" autocomplete="username" required>
+      </label>
+      <label class="campo">Senha
+        <input id="senha" type="password" autocomplete="current-password" required>
+      </label>
+      <button id="entrar" class="btn btn-primario btn-largo" type="submit">Entrar</button>
+    </form>
+  </main>
+
+  <!-- Painel -->
+  <div id="painel" class="painel" hidden>
+    <aside class="lateral">
+      <div class="marca">
+        <span class="logo" aria-hidden="true">UNV</span>
+        <span class="marca-texto"><strong>Administração</strong><small>Chatbot UNIVERSO</small></span>
+      </div>
+      <nav class="nav" aria-label="Seções do painel">
+        <a class="nav-item" href="#logs" data-secao="logs">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H8l-4 4z"/></svg>Conversas
+        </a>
+        <a class="nav-item" href="#documentos" data-secao="documentos">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6zM14 3v4h4"/></svg>Documentos
+        </a>
+      </nav>
+      <div class="lateral-rodape">
+        <span id="usuario" class="usuario"></span>
+        <div class="lateral-acoes">
+          <a class="link-lateral" href="/">Ver chat</a>
+          <button id="sair" class="link-lateral" type="button">Sair</button>
+        </div>
+      </div>
+    </aside>
+
+    <main class="conteudo">
+      <!-- Conversas -->
+      <section id="secao-logs" aria-labelledby="titulo-logs">
+        <header class="cabecalho">
+          <div>
+            <h1 id="titulo-logs">Conversas</h1>
+            <p class="subtitulo">Perguntas e respostas registradas no chatbot.</p>
+          </div>
+          <button id="atualizar-logs" class="btn" type="button">Atualizar</button>
+        </header>
+
+        <div id="kpis" class="kpis"></div>
+
+        <div class="filtros">
+          <label class="campo campo-busca">Buscar
+            <input id="filtro-texto" type="search" placeholder="Nome, pergunta ou resposta">
+          </label>
+          <label class="campo">Tipo de resposta
+            <select id="filtro-modo"><option value="">Todos</option></select>
+          </label>
+          <label class="campo">Avaliação
+            <select id="filtro-avaliacao">
+              <option value="">Todas</option>
+              <option value="util">Útil</option>
+              <option value="nao_util">Não útil</option>
+              <option value="sem">Sem avaliação</option>
+            </select>
+          </label>
+        </div>
+
+        <p id="logs-contagem" class="contagem" role="status"></p>
+
+        <div class="tabela-caixa">
+          <table class="tabela">
+            <thead>
+              <tr>
+                <th scope="col" class="col-data">Data</th>
+                <th scope="col" class="col-nome">Aluno</th>
+                <th scope="col">Pergunta</th>
+                <th scope="col" class="col-modo">Tipo</th>
+                <th scope="col" class="col-avaliacao">Avaliação</th>
+                <th scope="col" class="col-tempo num">Tempo</th>
+              </tr>
+            </thead>
+            <tbody id="logs-corpo"></tbody>
+          </table>
+        </div>
+
+        <nav id="paginacao" class="paginacao" aria-label="Paginação" hidden>
+          <button id="pagina-anterior" class="btn" type="button">Anterior</button>
+          <span id="pagina-info" class="contagem"></span>
+          <button id="pagina-proxima" class="btn" type="button">Próxima</button>
+        </nav>
+      </section>
+
+      <!-- Documentos -->
+      <section id="secao-documentos" aria-labelledby="titulo-documentos" hidden>
+        <header class="cabecalho">
+          <div>
+            <h1 id="titulo-documentos">Documentos</h1>
+            <p id="docs-resumo" class="subtitulo">Base de conhecimento consultada pelo chatbot.</p>
+          </div>
+        </header>
+
+        <form id="form-upload" class="cartao" novalidate>
+          <h2>Adicionar PDFs</h2>
+          <p class="subtitulo cartao-sub">Cada PDF é convertido com OCR e leitura de tabelas e guardado em três formatos: Markdown limpo, JSON estruturado e blocos prontos para a busca (JSONL).</p>
+          <fieldset id="upload-campos" class="upload">
+            <label id="zona" class="zona">
+              <input id="up-arquivo" class="oculto" type="file" accept="application/pdf,.pdf" multiple>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V5M7 10l5-5 5 5M4 19h16"/></svg>
+              <span id="zona-texto" class="zona-texto"><strong>Escolha um ou mais PDFs</strong> ou arraste para cá</span>
+              <span id="zona-detalhe" class="zona-detalhe">Os arquivos são convertidos um a um e a base é reindexada.</span>
+            </label>
+            <div class="upload-campos">
+              <label class="campo">Título
+                <input id="up-titulo" type="text" maxlength="200" placeholder="Usa o nome do arquivo se vazio">
+              </label>
+              <label class="campo">Categoria
+                <input id="up-categoria" type="text" maxlength="80" list="categorias" value="documento">
+                <datalist id="categorias"></datalist>
+              </label>
+              <label class="campo">Data de atualização
+                <input id="up-data" type="date">
+              </label>
+              <label class="campo">URL da fonte
+                <input id="up-url" type="url" maxlength="1000" placeholder="https://">
+              </label>
+            </div>
+          </fieldset>
+          <ul id="fila" class="fila" aria-label="Arquivos escolhidos" hidden></ul>
+          <p id="upload-aviso" class="alerta" role="status" hidden></p>
+          <div id="upload-progresso" class="progresso" hidden><span></span></div>
+          <div class="upload-acoes">
+            <button id="up-enviar" class="btn btn-primario" type="submit">Enviar e indexar</button>
+          </div>
+        </form>
+
+        <form id="form-busca" class="cartao" novalidate>
+          <h2>Testar a busca</h2>
+          <p class="subtitulo cartao-sub">Veja quais trechos uma pergunta recupera, sem chamar o modelo. Use depois de enviar um documento para conferir se o conteúdo é encontrado.</p>
+          <div class="busca-linha">
+            <label class="campo campo-busca">Pergunta de teste
+              <input id="busca-pergunta" type="search" maxlength="1000" placeholder="Ex.: qual o prazo para pedir segunda chamada?">
+            </label>
+            <button id="busca-enviar" class="btn" type="submit">Buscar trechos</button>
+          </div>
+          <div id="busca-resultado" class="busca-resultado" aria-live="polite"></div>
+        </form>
+
+        <div class="filtros filtros-docs">
+          <label class="campo campo-busca">Buscar documento
+            <input id="filtro-docs" type="search" placeholder="Título, arquivo ou categoria">
+          </label>
+        </div>
+
+        <div class="tabela-caixa">
+          <table class="tabela">
+            <thead>
+              <tr>
+                <th scope="col">Documento</th>
+                <th scope="col" class="col-categoria">Categoria</th>
+                <th scope="col" class="col-atualizado">Atualizado em</th>
+                <th scope="col" class="col-tamanho num">Blocos</th>
+                <th scope="col" class="col-tamanho num">Tamanho</th>
+                <th scope="col" class="col-acao"><span class="oculto">Ações</span></th>
+              </tr>
+            </thead>
+            <tbody id="docs-corpo"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Detalhe da interação -->
+  <dialog id="detalhe" class="gaveta" aria-labelledby="detalhe-titulo">
+    <div class="gaveta-corpo">
+      <header class="gaveta-topo">
+        <div>
+          <h2 id="detalhe-titulo"></h2>
+          <p id="detalhe-sub" class="subtitulo"></p>
+        </div>
+        <button id="detalhe-fechar" class="btn" type="button">Fechar</button>
+      </header>
+      <div id="detalhe-conteudo"></div>
+    </div>
+  </dialog>
+
+  <!-- Confirmação de remoção -->
+  <dialog id="confirmar" class="modal" aria-labelledby="confirmar-titulo">
+    <h2 id="confirmar-titulo">Remover documento?</h2>
+    <p id="confirmar-texto"></p>
+    <p class="subtitulo">O arquivo e o PDF original são apagados do servidor e a base é reindexada. Não é possível desfazer.</p>
+    <p id="confirmar-erro" class="alerta alerta-erro" role="alert" hidden></p>
+    <div class="modal-acoes">
+      <button id="confirmar-cancelar" class="btn" type="button">Cancelar</button>
+      <button id="confirmar-remover" class="btn btn-perigo" type="button">Remover documento</button>
+    </div>
+  </dialog>
+
+  <div id="avisos" class="avisos" role="status" aria-live="polite"></div>
+  <script src="admin.js"></script>
+</body>
+</html>

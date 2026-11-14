@@ -58,10 +58,13 @@ class LLMFalso:
         self.falhar = falhar
         self.chamadas = []
 
-    def gerar(self, mensagens, temperatura):
-        self.chamadas.append({"mensagens": mensagens, "temperatura": temperatura})
+    def gerar(self, mensagens, temperatura, ao_token=None):
+        self.chamadas.append({"mensagens": mensagens, "temperatura": temperatura, "stream": ao_token is not None})
         if self.falhar:
             raise LLMIndisponivel("Ollama fora do ar (simulado)")
+        if ao_token is not None:  # simula o stream do Ollama: palavra por palavra
+            for palavra in self.resposta.split(" "):
+                ao_token(palavra + " ")
         return self.resposta
 
     def disponivel(self):
@@ -77,6 +80,9 @@ CALENDARIO_MD = """# Calendário Letivo de Teste
 ## Outubro
 - 05 a 10 de outubro – Período de aplicação da V1 das disciplinas presenciais.
 - 15 a 20 de outubro – Período de solicitação da R1 no Espaço do Aluno.
+
+## Novembro
+- 14 de novembro – Fechamento do período de realização das Avaliações AF e AT.
 """
 
 CRITERIOS_MD = """# Critérios de Avaliação de Teste
@@ -126,11 +132,15 @@ def ambiente(tmp_path):
     config = replace(
         carregar_config(),
         docs_dir=docs,
+        originais_dir=tmp_path / "originais" / "uploads",
+        docling_dir=tmp_path / "docling",
         manifesto=manifesto,
         indice_dir=tmp_path / "indice",
         registros_dir=tmp_path / "registros",
         parametros_arquivo=tmp_path / "parametros.json",
         admin_key="chave-teste",
+        admin_email="admin@teste.com",
+        admin_pass="senha-teste",
         chunk_tokens=120,
         chunk_sobreposicao=20,
     )

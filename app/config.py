@@ -38,6 +38,7 @@ class Config:
     llm_api_key: str
     llm_timeout: float
     llm_num_ctx: int
+    llm_keep_alive: str
     # Embeddings
     embedding_provedor: str  # "sentence-transformers" ou "ollama"
     embedding_modelo: str
@@ -46,12 +47,18 @@ class Config:
     chunk_sobreposicao: int
     # Caminhos
     docs_dir: Path
+    originais_dir: Path
+    docling_dir: Path
     manifesto: Path
     indice_dir: Path
     registros_dir: Path
     parametros_arquivo: Path
     # Segurança (RNF07: credenciais fora do código)
     admin_key: str
+    pdf_upload_max_mb: int
+    admin_email: str = ""
+    admin_pass: str = ""
+    llm_num_gpu: int = -1  # camadas do modelo na GPU (Ollama); -1 = automático
 
 
 def carregar_config() -> Config:
@@ -73,16 +80,23 @@ def carregar_config() -> Config:
         llm_api_key=_env("LLM_API_KEY", ""),
         llm_timeout=float(_env("LLM_TIMEOUT", "120")),
         llm_num_ctx=int(_env("LLM_NUM_CTX", "8192")),
+        llm_keep_alive=_env("LLM_KEEP_ALIVE", "2h"),
+        llm_num_gpu=int(_env("LLM_NUM_GPU", "-1")),
         embedding_provedor=provedor,
         embedding_modelo=_env("EMBEDDING_MODELO", modelo_emb_padrao),
         chunk_tokens=int(_env("CHUNK_TOKENS", "500")),
         chunk_sobreposicao=int(_env("CHUNK_SOBREPOSICAO", "50")),
         docs_dir=Path(_env("DOCS_DIR", str(BASE_DIR / "data" / "documentos"))),
+        originais_dir=Path(_env("ORIGINAIS_DIR", str(BASE_DIR / "data" / "originais" / "uploads"))),
+        docling_dir=Path(_env("DOCLING_DIR", str(BASE_DIR / "data" / "docling"))),
         manifesto=Path(_env("MANIFESTO", str(BASE_DIR / "data" / "manifesto.json"))),
         indice_dir=Path(_env("INDICE_DIR", str(BASE_DIR / "indice"))),
         registros_dir=Path(_env("REGISTROS_DIR", str(BASE_DIR / "registros"))),
         parametros_arquivo=Path(_env("PARAMETROS_ARQUIVO", str(BASE_DIR / "data" / "parametros.json"))),
         admin_key=_env("ADMIN_KEY", ""),
+        pdf_upload_max_mb=max(1, int(_env("PDF_UPLOAD_MAX_MB", "25"))),
+        admin_email=_env("EMAIL", ""),
+        admin_pass=os.getenv("PASS", "").strip(),
     )
 
 
@@ -97,6 +111,32 @@ PROMPT_PADRAO = (
     "Ao final, liste as fontes utilizadas no formato [Documento – seção]."
 )
 
+# Valem para qualquer prompt_sistema: o administrador ajusta o tom, mas estas regras não saem.
+# Pedir dados ao aluno é decisão do sistema (MotorRAG._campos_para_esclarecer), nunca do modelo.
+MENSAGEM_NAO_LOCALIZADA = "Não localizei essa informação nos documentos oficiais."
+
+REGRAS_RESPOSTA = (
+    "Regras obrigatórias:\n"
+    "1. Responda diretamente, usando somente o que está escrito nos trechos.\n"
+    # Testado em 2026-11-07: permitir que o modelo pergunte (formato "ESCLARECIMENTO:") baixou o acerto
+    # de 33/35 para 30-31/35 e ele nunca usou o formato. A pergunta de volta é decidida pelo código.
+    "2. Nunca faça perguntas ao usuário nem peça curso, modalidade, período, semestre ou qualquer "
+    "outro dado. Responda com o que os trechos trazem.\n"
+    f"3. Se a informação pedida não estiver nos trechos, escreva: \"{MENSAGEM_NAO_LOCALIZADA}\" e "
+    "indique o Espaço do Aluno ou a central 0800 721 0251. Não dê resposta vaga.\n"
+    "4. Em perguntas de data ou prazo, responda com a data escrita nos trechos. Sem data nos trechos, "
+    "aplique a regra 3.\n"
+    "5. Não invente datas, valores, notas ou procedimentos. Não complete lacunas com suposições.\n"
+    "6. Não aplique a um nível de ensino ou modalidade regras escritas para outro, como pós-graduação "
+    "para graduação ou presencial para EaD, e não combine regras de seções diferentes sem que os "
+    "trechos indiquem essa relação.\n"
+    "7. Não expanda nem redefina siglas por conta própria; preserve o significado dos trechos.\n"
+    "8. Não cite \"Trecho 1\" ou números de trecho na resposta; as fontes são exibidas ao usuário.\n"
+    "9. Datas de calendário valem para o calendário de onde vieram: ao informar uma data, diga de qual "
+    "calendário ela é (por exemplo, o dos cursos a distância), conforme o nome da fonte.\n"
+    "10. Escreva fórmulas em texto simples, como MF = (MS + VS)/2. Não use LaTeX nem símbolos como \\frac."
+)
+
 
 @dataclass
 class Parametros:
@@ -107,6 +147,8 @@ class Parametros:
     temperatura: float = 0.1
     historico_trocas: int = 2
     prompt_sistema: str = PROMPT_PADRAO
+    # Peso da busca lexical (BM25) somado à similaridade vetorial; 0 desliga a busca híbrida.
+    peso_lexical: float = 0.08
 
     def validar(self) -> None:
         if not 1 <= int(self.top_k) <= 20:
@@ -117,6 +159,8 @@ class Parametros:
             raise ValueError("temperatura deve estar entre 0 e 2.")
         if not 0 <= int(self.historico_trocas) <= 10:
             raise ValueError("historico_trocas deve estar entre 0 e 10.")
+        if not 0.0 <= float(self.peso_lexical) <= 1.0:
+            raise ValueError("peso_lexical deve estar entre 0 e 1.")
         if not str(self.prompt_sistema).strip():
             raise ValueError("prompt_sistema não pode ser vazio.")
 

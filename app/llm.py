@@ -6,11 +6,19 @@ padrão OpenAI (/chat/completions), inclusive a do próprio Ollama em /v1 (RNF05
 """
 from __future__ import annotations
 
+import json
+import logging
 import re
 
 import httpx
 
 from .config import Config
+
+logger = logging.getLogger(__name__)
+
+
+SEMENTE = 7
+MAX_TOKENS_RESPOSTA = 700  # teto de segurança: uma resposta normal tem de 50 a 250 tokens
 
 
 class LLMIndisponivel(RuntimeError):
@@ -24,32 +32,73 @@ def _limpar_resposta(texto: str | None) -> str:
 
 class ClienteLLM:
     def __init__(self, api: str, base_url: str, modelo: str, api_key: str = "",
-                 timeout: float = 120.0, num_ctx: int = 8192):
+                 timeout: float = 120.0, num_ctx: int = 8192, keep_alive: str = "2h", num_gpu: int = -1):
         self.api = api
         self.base_url = base_url.rstrip("/")
         self.modelo = modelo
         self.api_key = api_key
         self.timeout = timeout
         self.num_ctx = num_ctx
+        self.keep_alive = keep_alive
+        self.num_gpu = num_gpu
 
     def _cabecalhos(self) -> dict:
         return {"Authorization": f"Bearer {self.api_key}"} if self.api_key else {}
 
-    def gerar(self, mensagens: list[dict], temperatura: float) -> str:
+    def _chat_ollama(self, mensagens: list[dict], opcoes: dict, ao_token=None) -> str:
+        """Chama /api/chat e devolve o texto. Com ao_token, recebe a resposta em partes (stream)."""
+        def enviar(opcoes_finais: dict) -> str | None:
+            corpo = {"model": self.modelo, "messages": mensagens, "stream": ao_token is not None,
+                     "keep_alive": self.keep_alive, "options": {"num_ctx": self.num_ctx, **opcoes_finais}}
+            with httpx.stream("POST", f"{self.base_url}/api/chat", json=corpo, timeout=self.timeout) as resposta:
+                if resposta.status_code >= 500 and "num_gpu" in opcoes_finais:
+                    resposta.read()
+                    # Sem memória de vídeo para todas as camadas: volta à divisão automática do Ollama.
+                    logger.warning("Ollama recusou LLM_NUM_GPU=%s (%s); usando o ajuste automático.",
+                                   self.num_gpu, resposta.text[:200])
+                    return None
+                resposta.raise_for_status()
+                if ao_token is None:
+                    resposta.read()
+                    return resposta.json()["message"]["content"]
+                partes = []
+                for linha in resposta.iter_lines():
+                    if not linha.strip():
+                        continue
+                    evento = json.loads(linha)
+                    if evento.get("error"):
+                        raise ValueError(evento["error"])
+                    pedaco = (evento.get("message") or {}).get("content") or ""
+                    if pedaco:
+                        partes.append(pedaco)
+                        ao_token(pedaco)
+                return "".join(partes)
+
+        if self.num_gpu >= 0:
+            texto = enviar({**opcoes, "num_gpu": self.num_gpu})
+            if texto is not None:
+                return texto
+            self.num_gpu = -1
+        return enviar(opcoes)
+
+    def aquecer(self, mensagem_sistema: str) -> None:
+        """Carrega o modelo e deixa processada a parte fixa do prompt, para a primeira pergunta não esperar."""
+        if self.api != "ollama":
+            return
+        try:
+            self._chat_ollama([{"role": "system", "content": mensagem_sistema}, {"role": "user", "content": "oi"}],
+                              {"temperature": 0.0, "num_predict": 1})
+            logger.info("Modelo %s carregado e prompt fixo processado.", self.modelo)
+        except (httpx.HTTPError, ValueError) as erro:
+            logger.warning("Não foi possível aquecer o modelo %s: %s", self.modelo, erro)
+
+    def gerar(self, mensagens: list[dict], temperatura: float, ao_token=None) -> str:
+        """Gera a resposta. ao_token(texto), se informado, recebe cada parte assim que o Ollama a produz."""
         try:
             if self.api == "ollama":
-                resposta = httpx.post(
-                    f"{self.base_url}/api/chat",
-                    json={
-                        "model": self.modelo,
-                        "messages": mensagens,
-                        "stream": False,
-                        "options": {"temperature": temperatura, "num_ctx": self.num_ctx},
-                    },
-                    timeout=self.timeout,
-                )
-                resposta.raise_for_status()
-                conteudo = resposta.json()["message"]["content"]
+                # Semente fixa: a mesma pergunta com os mesmos trechos gera sempre a mesma resposta.
+                opcoes = {"temperature": temperatura, "seed": SEMENTE, "num_predict": MAX_TOKENS_RESPOSTA}
+                conteudo = self._chat_ollama(mensagens, opcoes, ao_token)
             else:
                 resposta = httpx.post(
                     f"{self.base_url}/chat/completions",
@@ -90,4 +139,6 @@ def criar_cliente_llm(config: Config) -> ClienteLLM:
         api_key=config.llm_api_key,
         timeout=config.llm_timeout,
         num_ctx=config.llm_num_ctx,
+        keep_alive=config.llm_keep_alive,
+        num_gpu=config.llm_num_gpu,
     )

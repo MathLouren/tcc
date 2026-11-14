@@ -1,6 +1,6 @@
 """Extração, limpeza e divisão em seções dos documentos institucionais (seção 3.5 do TCC).
 
-Formatos suportados: PDF (pypdf), HTML (BeautifulSoup), Markdown e texto simples.
+Formatos suportados: PDF (Docling), HTML (BeautifulSoup), Markdown e texto simples.
 Cada documento é convertido em uma lista de seções (título + texto), que depois
 são segmentadas em blocos pelo módulo de indexação.
 """
@@ -12,6 +12,8 @@ from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
+
+from .docling_pdf import converter_pdf_docling
 
 EXTENSOES_SUPORTADAS = {".pdf", ".html", ".htm", ".md", ".txt"}
 TITULO_PADRAO = "Geral"
@@ -186,13 +188,9 @@ def _linhas_repetidas(paginas: list[list[str]]) -> set[str]:
 
 
 def _extrair_pdf(caminho: Path, calendario: bool) -> list[Secao]:
-    from pypdf import PdfReader
-
-    leitor = PdfReader(str(caminho))
-    paginas = [(n, limpar_linhas(p.extract_text() or "")) for n, p in enumerate(leitor.pages, start=1)]
-    repetidas = _linhas_repetidas([linhas for _, linhas in paginas])
-    pares = ((n, l) for n, linhas in paginas for l in linhas if l not in repetidas)
-    return _segmentar_linhas(pares, calendario)
+    del calendario  # A estrutura de títulos e tabelas é produzida pelo próprio Docling.
+    markdown, _ = converter_pdf_docling(caminho)
+    return _extrair_markdown(markdown)
 
 
 def _extrair_html(caminho: Path) -> list[Secao]:

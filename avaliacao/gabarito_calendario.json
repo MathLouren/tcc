@@ -1,0 +1,37 @@
+{
+  "descricao": "Gabarito do Calendário Acadêmico EaD/semipresencial 2026.2 (versão 01/07/2026), conferido no PDF original. Só vale com o calendário na base. Inclui as perguntas que o aluno fez no chat em 2026-11-09 e que foram respondidas com a legenda do PDF ou com o mês errado.",
+  "respondiveis": [
+    {"pergunta": "Quando começa as ats", "grupos": [["14 de setembro"]], "proibidos": ["14 de outubro"]},
+    {"pergunta": "Qual o prazo para iniicio e final das at e af?", "grupos": [["17 de agosto"], ["14 de setembro"], ["14 de novembro"]], "proibidos": ["verificacoes (at, af"]},
+    {"pergunta": "QUAL A DATA DE INICIO E FIM PARA FAZER A AT", "grupos": [["14 de setembro"], ["14 de novembro"]], "proibidos": ["14 de outubro"]},
+    {"pergunta": "então que saber as datas exatas do inicio da AT E AF", "grupos": [["17 de agosto"], ["14 de setembro"]], "proibidos": ["verificacoes (at, af"]},
+    {"pergunta": "Qual o prazo para entregar as ats?", "grupos": [["14 de novembro"]]},
+    {"pergunta": "até quando posso fazer a AF?", "grupos": [["14 de novembro"]]},
+    {"pergunta": "quando é a AP?", "grupos": [["09 a 28", "9 a 28"], ["novembro"]]},
+    {"pergunta": "quando é a prova AS?", "grupos": [["07 a 19", "7 a 19"], ["dezembro"]]},
+    {"pergunta": "tem segunda chamada da AP?", "grupos": [["nao ha", "nao,", "nao.", "nao tem", "nao existe"]]},
+    {"pergunta": "quando começam as aulas no ead?", "grupos": [["04 de agosto", "4 de agosto", "10 de agosto"]]},
+    {"pergunta": "Quando começam as aulas dos veteranos em 2026.2?", "grupos": [["04 de agosto", "4 de agosto"]]},
+    {"pergunta": "Quando termina o semestre 2026.2?", "grupos": [["23 de dezembro"]]},
+    {"pergunta": "Qual é o prazo final para trancamento de matrícula?", "grupos": [["30 de setembro"]]},
+    {"pergunta": "Quantos dias letivos há em agosto?", "grupos": [["26"]]},
+    {"pergunta": "Qual é o período do recesso de fim de ano?", "grupos": [["24 a 31", "24 de dezembro"]]},
+    {"pergunta": "até quando posso postar o TCC?", "grupos": [["12 de dezembro"]]},
+    {"pergunta": "qual a data limite pra postar o relatório de estágio?", "grupos": [["12 de dezembro"]]},
+    {"pergunta": "até quando posso enviar o termo de compromisso de estágio?", "grupos": [["30 de setembro"]]},
+    {"pergunta": "quando começa o vestibular 2027?", "grupos": [["13 de outubro", "05 de outubro", "5 de outubro"]]},
+    {"pergunta": "quando começa a renovação de matrícula para 2027?", "grupos": [["23 de dezembro"]]},
+    {"pergunta": "dia 20 de novembro tem aula?", "grupos": [["feriado", "consciencia negra"]]},
+    {"pergunta": "até quando posso aprovar as atividades complementares?", "grupos": [["12 de dezembro"]]}
+  ],
+  "sem_resposta": [
+    "quando é a prova V1 de 2026.2 no presencial?",
+    "qual o horário da prova AP?",
+    "quando é o vestibular de medicina?",
+    "qual a data da prova de segunda chamada da V2?"
+  ],
+  "conversas": [
+    {"turnos": ["o que é AT?", "e quando começa?"], "grupos": [["14 de setembro"]]},
+    {"turnos": ["quando é a prova?", "ead", "todas"], "grupos": [["novembro"]]}
+  ]
+}

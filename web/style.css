@@ -91,6 +91,14 @@ body {
 .msg.bot { align-self: flex-start; background: var(--bolha-bot); border-bottom-left-radius: 3px; }
 .msg.bot .quem { font-size: 11px; color: var(--texto-suave); margin-bottom: 4px; font-weight: 600; }
 .msg.digitando .texto { color: var(--texto-suave); font-style: italic; }
+.msg.escrevendo .texto::after {
+  content: "▍";
+  margin-left: 1px;
+  color: var(--azul);
+  animation: cursor-piscando 1s steps(2, start) infinite;
+}
+@keyframes cursor-piscando { to { visibility: hidden; } }
+@media (prefers-reduced-motion: reduce) { .msg.escrevendo .texto::after { animation: none; } }
 .msg.erro { background: #fde2e2; }
 .msg a { color: var(--azul); }
 
@@ -174,4 +182,27 @@ body {
   .entrada { padding: 10px 16px 4px; }
   .nota { margin: 4px 16px 10px; }
   .titulo small { display: none; }
+}
+
+.sobreposicao {
+  position: fixed; inset: 0; z-index: 10;
+  background: rgba(31, 58, 95, .92);
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px;
+}
+.sobreposicao[hidden] { display: none; }
+.cartao-nome {
+  background: #fff; border-radius: 12px; padding: 28px;
+  width: 100%; max-width: 400px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.cartao-nome h2 { margin: 0; font-size: 19px; color: var(--azul); }
+.cartao-nome p { margin: 0; font-size: 14px; color: var(--texto-suave); }
+.cartao-nome input {
+  padding: 11px 12px; font-size: 15px;
+  border: 1px solid var(--borda); border-radius: 8px;
+}
+.cartao-nome button {
+  background: var(--azul); color: #fff; border: 0; border-radius: 8px;
+  padding: 11px; font-size: 15px; cursor: pointer;
 }

@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Chatbot Institucional UNIVERSO – Documentação</title>
+<style>
+  @page { size: A4; margin: 22mm 18mm 20mm; }
+  :root { --azul: #1f3a5f; --azul-claro: #e6edf7; --cinza: #5a6b80; --borda: #d5dde7; --verde: #1f7a4a; --vermelho: #b03a2e; }
+  * { box-sizing: border-box; }
+  body { font: 10.5pt/1.55 "Segoe UI", Arial, sans-serif; color: #1b2430; margin: 0; }
+  h1, h2, h3 { color: var(--azul); line-height: 1.25; }
+  h1 { font-size: 24pt; margin: 0 0 6pt; }
+  h2 { font-size: 15pt; margin: 22pt 0 8pt; padding-bottom: 4pt; border-bottom: 2px solid var(--azul-claro); page-break-after: avoid; }
+  h3 { font-size: 11.5pt; margin: 14pt 0 5pt; page-break-after: avoid; }
+  p { margin: 0 0 7pt; }
+  ul, ol { margin: 0 0 8pt; padding-left: 18pt; }
+  li { margin-bottom: 3pt; }
+  code { font-family: Consolas, "Courier New", monospace; font-size: 9.2pt; background: #f2f4f8; padding: 1px 4px; border-radius: 3px; }
+  pre { font-family: Consolas, "Courier New", monospace; font-size: 9pt; background: #f2f4f8; border: 1px solid var(--borda); border-radius: 6px; padding: 8pt 10pt; white-space: pre-wrap; page-break-inside: avoid; margin: 0 0 9pt; }
+  table { width: 100%; border-collapse: collapse; margin: 4pt 0 10pt; font-size: 9.4pt; page-break-inside: avoid; }
+  th { background: var(--azul); color: #fff; text-align: left; font-weight: 600; padding: 5pt 7pt; }
+  td { border-bottom: 1px solid var(--borda); padding: 5pt 7pt; vertical-align: top; }
+  tr:nth-child(even) td { background: #f7f9fc; }
+  .num { text-align: right; white-space: nowrap; }
+  .capa { height: 250mm; display: flex; flex-direction: column; justify-content: center; page-break-after: always; }
+  .capa .marca { width: 54pt; height: 54pt; border-radius: 50%; background: var(--azul); color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-bottom: 18pt; }
+  .capa .sub { font-size: 13pt; color: var(--cinza); margin-bottom: 26pt; }
+  .capa dl { display: grid; grid-template-columns: 110pt 1fr; gap: 4pt 10pt; font-size: 10pt; color: var(--cinza); }
+  .capa dt { font-weight: 600; color: #1b2430; }
+  .caixa { border: 1px solid var(--borda); border-left: 4px solid var(--azul); background: #f7f9fc; border-radius: 4px; padding: 7pt 10pt; margin: 0 0 10pt; page-break-inside: avoid; }
+  .caixa.alerta { border-left-color: var(--vermelho); background: #fdf3f2; }
+  .caixa.ok { border-left-color: var(--verde); background: #f0f8f3; }
+  .caixa strong:first-child { color: var(--azul); }
+  .caixa.alerta strong:first-child { color: var(--vermelho); }
+  .passo { display: grid; grid-template-columns: 22pt 1fr; gap: 0 8pt; margin-bottom: 8pt; page-break-inside: avoid; }
+  .passo .n { width: 18pt; height: 18pt; border-radius: 50%; background: var(--azul); color: #fff; font-size: 9pt; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-top: 1pt; }
+  .sumario { columns: 2; column-gap: 22pt; font-size: 10pt; }
+  .sumario li { break-inside: avoid; }
+  .pequeno { font-size: 9pt; color: var(--cinza); }
+  .quebra { page-break-before: always; }
+</style>
+</head>
+<body>
+
+<section class="capa">
+  <div class="marca">UNV</div>
+  <h1>Chatbot Institucional UNIVERSO</h1>
+  <div class="sub">Documentação passo a passo: instalação, uso, painel administrativo,<br>funcionamento das respostas e validação</div>
+  <dl>
+    <dt>Projeto</dt><dd>Sistema de resposta a perguntas com RAG para alunos do campus São Gonçalo</dd>
+    <dt>Versão</dt><dd>Atualizada em 08/11/2026</dd>
+    <dt>Modelo</dt><dd>qwen2.5:7b (Ollama), embeddings intfloat/multilingual-e5-base</dd>
+    <dt>Base atual</dt><dd>Manual Informativo do Aluno 2026.2 e Grade Curricular 109AN (138 blocos)</dd>
+    <dt>Resultado</dt><dd>34 de 35 respostas corretas e 12 de 12 recusas corretas na validação final</dd>
+    <dt>Tempo</dt><dd>Texto começa a aparecer em ~1 a 5 s; respostas completas em ~3 a 11 s</dd>
+  </dl>
+</section>
+
+<h2>Sumário</h2>
+<ol class="sumario">
+  <li>Visão geral</li>
+  <li>Instalação e inicialização</li>
+  <li>Configuração (.env)</li>
+  <li>Uso pelo aluno</li>
+  <li>Painel administrativo (/admin)</li>
+  <li>Como adicionar e remover documentos</li>
+  <li>Como o chatbot responde</li>
+  <li>Melhorias realizadas, passo a passo</li>
+  <li>Tempo de resposta</li>
+  <li>Validação e resultados</li>
+  <li>Como validar novas mudanças</li>
+  <li>Limitações conhecidas e próximos passos</li>
+  <li>Solução de problemas</li>
+  <li>Arquivos do projeto</li>
+</ol>
+
+<h2>1. Visão geral</h2>
+<p>O chatbot responde dúvidas acadêmicas usando apenas os documentos oficiais carregados na base. Cada resposta vem acompanhada das fontes consultadas. O fluxo é o de RAG (geração aumentada por recuperação):</p>
+<ol>
+  <li>O PDF oficial é convertido em texto estruturado (Markdown) pelo Docling.</li>
+  <li>O texto é dividido em blocos e cada bloco vira um vetor (embedding) num índice FAISS.</li>
+  <li>Na pergunta do aluno, os blocos mais parecidos são recuperados.</li>
+  <li>O modelo de linguagem (qwen2.5:7b, no Ollama) redige a resposta usando somente esses blocos.</li>
+</ol>
+<table>
+  <tr><th>Componente</th><th>Tecnologia</th><th>Função</th></tr>
+  <tr><td>API e interface web</td><td>FastAPI + HTML/JS</td><td>Chat do aluno, painel /admin e rotas REST</td></tr>
+  <tr><td>Conversão de PDF</td><td>Docling</td><td>Texto, títulos, tabelas e posições de cada texto na página</td></tr>
+  <tr><td>Busca</td><td>multilingual-e5-base + FAISS</td><td>Encontrar os trechos relevantes para a pergunta</td></tr>
+  <tr><td>Geração</td><td>Ollama com qwen2.5:7b</td><td>Redigir a resposta em português a partir dos trechos</td></tr>
+  <tr><td>Registros</td><td>JSON Lines em <code>registros/</code></td><td>Perguntas, respostas, nome do aluno e avaliações</td></tr>
+</table>
+
+<h2>2. Instalação e inicialização</h2>
+<div class="passo"><div class="n">1</div><div><strong>Instale o Ollama</strong> e baixe o modelo validado:
+<pre>ollama pull qwen2.5:7b</pre>
+São cerca de 4,7 GB. Se o download falhar com erro de rede (por exemplo <code>tls: bad record MAC</code>), repita o comando: ele continua de onde parou.</div></div>
+<div class="passo"><div class="n">2</div><div><strong>Configure o <code>.env</code></strong> (seção 3). Na primeira execução, o <code>iniciar.bat</code> cria o arquivo a partir do <code>.env.example</code>.</div></div>
+<div class="passo"><div class="n">3</div><div><strong>Inicie o servidor</strong> na pasta do projeto:
+<pre>.\iniciar.bat</pre>
+O script cria o ambiente virtual, instala as dependências na primeira vez e sobe o servidor em <code>http://localhost:8000</code>. A primeira execução baixa o modelo de embeddings e indexa os documentos.</div></div>
+<div class="passo"><div class="n">4</div><div><strong>Acesse</strong> o chat em <code>http://localhost:8000</code> e o painel em <code>http://localhost:8000/admin</code>. Para encerrar, pressione <code>Ctrl+C</code> no terminal.</div></div>
+<div class="caixa"><strong>Requisitos testados:</strong> Windows 11, 32 GB de RAM e GPU GeForce GTX 1660 SUPER de 6 GB. Com o qwen2.5:7b, contexto de 4096 tokens, Ollama no modo Vulkan e o modelo inteiro na GPU, as respostas completas levam de 3 a 11 segundos, e o texto começa a aparecer antes disso. Em placas GTX 16xx, ative o Vulkan (seção 9). Em máquinas mais fracas, use <code>gemma3:4b</code>, que é mais rápido, porém menos preciso (seção 10).</div>
+
+<h2>3. Configuração (.env)</h2>
+<table>
+  <tr><th>Variável</th><th>Valor validado</th><th>Para que serve</th></tr>
+  <tr><td><code>OLLAMA_URL</code></td><td><code>http://localhost:11434</code></td><td>Endereço do Ollama</td></tr>
+  <tr><td><code>LLM_MODELO</code></td><td><code>qwen2.5:7b</code></td><td>Modelo que redige as respostas</td></tr>
+  <tr><td><code>LLM_NUM_CTX</code></td><td><code>4096</code></td><td>Janela de contexto. O maior prompt medido tem cerca de 3.300 tokens. O Ollama corta o início do prompt, onde ficam as regras, quando ele passa desse limite</td></tr>
+  <tr><td><code>LLM_NUM_GPU</code></td><td><code>99</code></td><td>Camadas do modelo na GPU. <code>99</code> põe o modelo inteiro na placa, o que deixa a escrita cerca de 3 vezes mais rápida. <code>-1</code> (padrão) deixa o Ollama decidir. Se faltar memória de vídeo, o chatbot volta sozinho ao ajuste automático</td></tr>
+  <tr><td><code>LLM_KEEP_ALIVE</code></td><td><code>2h</code> (padrão)</td><td>Tempo que o modelo fica carregado depois da última pergunta. Ao iniciar, o servidor já carrega o modelo</td></tr>
+  <tr><td><code>EMAIL</code> e <code>PASS</code></td><td>definidos por você</td><td>Login do painel /admin</td></tr>
+  <tr><td><code>ADMIN_KEY</code></td><td>opcional</td><td>Chave para chamar as rotas <code>/admin/...</code> por script (cabeçalho <code>X-Admin-Key</code>)</td></tr>
+  <tr><td><code>PDF_UPLOAD_MAX_MB</code></td><td><code>25</code> (padrão)</td><td>Tamanho máximo de cada PDF enviado</td></tr>
+</table>
+<p class="pequeno">O arquivo <code>.env</code> guarda senhas e não deve ir para o Git (ele já está no <code>.gitignore</code>).</p>
+
+<h2>4. Uso pelo aluno</h2>
+<ol>
+  <li><strong>Identificação:</strong> antes de conversar, o aluno informa o nome (obrigatório). O nome fica gravado junto de cada pergunta nos registros.</li>
+  <li><strong>Pergunta:</strong> o aluno escreve como fala, por exemplo "quanto preciso tirar na vs pra passar?". Siglas em minúsculas (vs, ats, af) são reconhecidas.</li>
+  <li><strong>Resposta aparecendo enquanto é escrita:</strong> o texto surge aos poucos, com um cursor piscando, em vez de só no final. Quando a resposta termina, aparecem as fontes e a avaliação.</li>
+  <li><strong>Resposta com fontes:</strong> cada resposta lista o documento e a seção usados.</li>
+  <li><strong>Pergunta de volta:</strong> quando a resposta depende de um dado que o aluno não informou, o chatbot pergunta antes de responder. Por exemplo, em "qual a média pra passar direto?", a média é 7,0 no presencial e 6,0 no EaD, então ele pergunta "presencial ou EaD?". A resposta do aluno é combinada com a pergunta original.</li>
+  <li><strong>Avaliação:</strong> o aluno marca a resposta como útil ou não útil. O resultado aparece no painel.</li>
+</ol>
+
+<h2>5. Painel administrativo (/admin)</h2>
+<p>Acesse <code>/admin</code> e entre com o <code>EMAIL</code> e a <code>PASS</code> do <code>.env</code>. A sessão dura 8 horas. Depois de 5 tentativas erradas, o login fica bloqueado por 5 minutos.</p>
+<h3>Aba Conversas</h3>
+<ul>
+  <li>Indicadores: total de interações, percentual de respostas úteis, perguntas sem resultado e tempo médio.</li>
+  <li>Busca por nome, pergunta ou resposta (ignora acentos), filtros por tipo de resposta e por avaliação, 25 linhas por página.</li>
+  <li>Ao clicar numa linha, abre um painel com a pergunta, a resposta completa, os trechos usados, a similaridade e o comentário do aluno.</li>
+</ul>
+<table>
+  <tr><th>Tipo de resposta no painel</th><th>Significado</th></tr>
+  <tr><td>Gerada pelo modelo</td><td>Resposta redigida pelo qwen2.5:7b a partir dos trechos</td></tr>
+  <tr><td>Validada</td><td>Resposta exata montada pelo código a partir das tabelas (grade curricular), sem o modelo</td></tr>
+  <tr><td>Esclarecimento</td><td>O chatbot pediu um dado ao aluno (modalidade, avaliação, curso ou semestre)</td></tr>
+  <tr><td>Sem resultado</td><td>A informação não está na base. Útil para descobrir que documentos faltam</td></tr>
+  <tr><td>Saudação</td><td>"oi", "obrigado", "tchau" e similares, respondidos sem busca</td></tr>
+  <tr><td>Trechos (sem modelo)</td><td>O Ollama estava indisponível e foram mostrados os trechos</td></tr>
+</table>
+
+<h2>6. Como adicionar e remover documentos</h2>
+<h3>Adicionar</h3>
+<ol>
+  <li>No painel, aba <strong>Documentos</strong>, clique ou arraste o PDF para a área de envio.</li>
+  <li>Opcionalmente, preencha título, categoria, data de atualização e URL da fonte.</li>
+  <li>Clique em <strong>Enviar e indexar</strong>. O Docling converte o PDF e a base é reindexada. Isso pode levar alguns minutos.</li>
+</ol>
+<p>Durante a conversão, o sistema:</p>
+<ul>
+  <li><strong>Fluxogramas:</strong> recupera o texto de páginas diagramadas que o Docling classifica como imagem. Um fluxograma curricular vira uma tabela de disciplinas por período, com carga horária, créditos e pré-requisitos.</li>
+  <li><strong>Logotipos:</strong> remove logotipos e figuras sem texto.</li>
+  <li><strong>Cabeçalhos e rodapés:</strong> remove o que se repete em toda página (por exemplo "Página 41 de 80"), que antes substituía os títulos verdadeiros das seções.</li>
+  <li><strong>Tabelas:</strong> reorganiza tabelas com título mesclado em itens "nome: valor".</li>
+</ul>
+<h3>Remover</h3>
+<p>Clique em <strong>Remover</strong> e confirme. O arquivo <code>.md</code>, o JSON do Docling e o PDF original são apagados e a base é reindexada.</p>
+<div class="caixa alerta"><strong>Atenção:</strong> a remoção não pode ser desfeita pelo painel. Arquivos que não estão no Git se perdem definitivamente. Antes de remover, guarde uma cópia do PDF original.</div>
+
+<h2 class="quebra">7. Como o chatbot responde</h2>
+<p>Cada pergunta passa pelas etapas abaixo, nesta ordem. As etapas 1 a 3 e 5 são decididas pelo código, sem o modelo de linguagem, o que as torna rápidas e exatas.</p>
+<table>
+  <tr><th>Etapa</th><th>O que acontece</th></tr>
+  <tr><td>1. Saudação</td><td>Mensagens que são só saudação, agradecimento ou despedida recebem resposta cordial direta.</td></tr>
+  <tr><td>2. Dado exato da grade</td><td>Perguntas sobre disciplinas por período, pré-requisito, carga horária, créditos, código ou contagem são respondidas lendo a tabela da matriz 109AN. Exemplos: "quais as matérias do 5 período?", "qual o pré-requisito do TCC 2?", "banco de dados é de qual período?".</td></tr>
+  <tr><td>3. Esclarecimento por regra</td><td>Datas de provas sem modalidade ou avaliação, referências genéricas ao curso ("minha grade") e semestres ambíguos geram uma pergunta ao aluno. Siglas já definem a modalidade: AF, AT, AP e AS são do EaD, e V1, V2, VS e R1 do presencial.</td></tr>
+  <tr><td>4. Busca</td><td>Recupera os 4 trechos mais parecidos acima do limiar. Se a pergunta cita uma modalidade, os trechos dessa modalidade são preferidos e os da outra, rebaixados.</td></tr>
+  <tr><td>5. Modalidade ambígua</td><td>Se a pergunta é sobre média, nota ou avaliação, não diz a modalidade e a base tem regras diferentes para presencial e EaD, o chatbot pergunta "presencial ou EaD?".</td></tr>
+  <tr><td>6. Geração</td><td>O modelo recebe os trechos e regras obrigatórias: usar só os trechos, não inventar datas ou valores, não misturar regras de níveis ou modalidades diferentes e não fazer perguntas. Quando um trecho começa no meio de um parágrafo de lei (§), o modelo recebe também o cabeçalho desse parágrafo, por exemplo "§ 2º Nos cursos de Graduação na modalidade EaD".</td></tr>
+  <tr><td>7. Proteções</td><td>Se o modelo tentar pedir um dado ao aluno, ele é chamado de novo, proibido de perguntar. Se insistir, a resposta vira "não localizei". Recusas curtas são trocadas por um texto padrão que indica o Espaço do Aluno e a central 0800. Em perguntas de data ou prazo, o texto também diz que os prazos ficam no Calendário Letivo.</td></tr>
+</table>
+<p class="pequeno">As regras obrigatórias ficam no código (<code>app/config.py</code>, <code>REGRAS_RESPOSTA</code>) e valem mesmo que o prompt seja alterado em <code>data/parametros.json</code>.</p>
+
+<h2>8. Melhorias realizadas, passo a passo</h2>
+<p>Cada melhoria abaixo partiu de um problema observado, teve a causa investigada e foi validada com o modelo real antes de ser mantida.</p>
+<table>
+  <tr><th style="width:24%">Problema</th><th style="width:38%">Causa encontrada</th><th>Solução</th></tr>
+  <tr><td>Todas as perguntas falhavam com "Não foi possível obter a resposta"</td><td>O navegador usava uma versão antiga do <code>app.js</code>, sem o nome do aluno, e o servidor recusava a requisição (erro 422).</td><td>Os arquivos do site passaram a exigir revalidação do navegador, e a mensagem de erro agora diferencia servidor fora do ar de requisição recusada.</td></tr>
+  <tr><td>Erro "porta 8000 já em uso"</td><td>Um servidor iniciado em segundo plano continuava aberto.</td><td>O processo foi encerrado. Veja a seção 13.</td></tr>
+  <tr><td>Grade curricular convertida "sem sentido"</td><td>O Docling classificou o fluxograma como imagem e descartou o texto dele.</td><td>Reconstrução das tabelas pela posição de cada texto. As 32 disciplinas foram conferidas com uma transcrição manual.</td></tr>
+  <tr><td>Modelo pedia "informe o seu curso" com o curso já na pergunta</td><td>O prompt antigo mandava o modelo pedir esclarecimentos, e o gemma3:4b fazia isso sem necessidade (25 de 59 perguntas da grade).</td><td>O modelo foi proibido de perguntar, com uma nova tentativa automática. As consultas à grade passaram a ser exatas, feitas pelo código.</td></tr>
+  <tr><td>Respostas inventadas ("as aulas começam na segunda semana letiva")</td><td>O prompt em <code>data/parametros.json</code> não tinha as regras contra inventar.</td><td>Criadas regras obrigatórias anexadas pelo código a qualquer prompt.</td></tr>
+  <tr><td>Recusas indevidas sobre média, VS e faltas</td><td>O cabeçalho repetido de cada página do PDF virou título de 65 seções, e as regras de avaliação perderam o contexto.</td><td>Remoção de cabeçalhos e rodapés repetidos. O resultado no 1º lugar da busca passou de 13 para 17 em 27.</td></tr>
+  <tr><td>Regra do EaD confundida com a do presencial</td><td>O trecho com a regra do EaD começa no meio do "§ 2º", e a palavra EaD ficou no trecho anterior.</td><td>Cada trecho herda o cabeçalho do parágrafo em que está, e a busca prefere trechos da modalidade citada.</td></tr>
+  <tr><td>"qual a média pra passar direto?" respondia só o presencial</td><td>A resposta depende da modalidade.</td><td>O código detecta a ambiguidade e pergunta "presencial ou EaD?".</td></tr>
+  <tr><td>"oi" e "obrigado" geravam "Não localizei"</td><td>Saudações passavam pela busca.</td><td>Resposta direta para mensagens sociais.</td></tr>
+  <tr><td>"Qual o prazo para entregar as ats?" só dizia "não localizei"</td><td>"ats" em minúsculas não era reconhecido, e a recusa não orientava o aluno.</td><td>Siglas em minúsculas reconhecidas, e a recusa passou a indicar o Calendário Letivo no Espaço do Aluno.</td></tr>
+  <tr><td>Precisão limitada mesmo com o trecho certo</td><td>O gemma3:4b lê mal regras parecidas.</td><td>Troca para qwen2.5:7b, que foi de 24/35 para 33/35 na mesma base.</td></tr>
+  <tr><td>Respostas demoravam de 17 a 30 segundos</td><td>Na GTX 1660 SUPER, o Ollama em modo CUDA lia o prompt devagar, e parte do modelo rodava no processador.</td><td>Ollama em modo Vulkan, modelo inteiro na GPU e carregamento na subida do servidor (seção 9).</td></tr>
+  <tr><td>O aluno esperava em silêncio até a resposta ficar pronta</td><td>A resposta só era enviada depois de totalmente escrita.</td><td>A resposta passou a aparecer enquanto o modelo escreve (rota <code>/chat/stream</code>).</td></tr>
+</table>
+<div class="caixa"><strong>Ideia testada e descartada:</strong> permitir que o modelo fizesse a pergunta de volta ao aluno, num formato próprio, baixou o acerto de 33/35 para 30/35 e 31/35, e o modelo nunca usou o formato. A pergunta de volta ficou a cargo do código, que é mais confiável.</div>
+
+<h2>9. Tempo de resposta</h2>
+<h3>Onde o tempo era gasto</h3>
+<p>Cada resposta tem duas fases no modelo: primeiro ele <strong>lê o prompt</strong> (regras, pergunta e cerca de 2.000 tokens de trechos) e depois <strong>escreve a resposta</strong>. A busca dos trechos leva menos de 0,1 s. A medição na GTX 1660 SUPER mostrou que a leitura era o gargalo:</p>
+<table>
+  <tr><th>Fase</th><th class="num">Antes</th><th class="num">Depois</th></tr>
+  <tr><td>Leitura do prompt</td><td class="num">~150 tokens/s (10 a 16 s)</td><td class="num">~400 tokens/s (3 a 6 s)</td></tr>
+  <tr><td>Escrita da resposta</td><td class="num">~14 tokens/s</td><td class="num">~38 tokens/s</td></tr>
+  <tr><td>Modelo na placa de vídeo</td><td class="num">82% (o resto no processador)</td><td class="num">100%</td></tr>
+  <tr><td>Primeira pergunta após iniciar</td><td class="num">+5 s para carregar o modelo</td><td class="num">modelo já carregado</td></tr>
+  <tr><td>Resposta mais demorada da validação</td><td class="num">25,1 s</td><td class="num">11,3 s</td></tr>
+</table>
+<p class="pequeno">A versão do Ollama instalada usa, nas placas GTX 16xx, um caminho lento do CUDA para ler o prompt (o próprio log do Ollama sugere recompilar o programa). Com Chrome e VS Code abertos, cerca de 1 GB da placa fica ocupado, e o Ollama deixava parte do modelo no processador.</p>
+
+<h3>O que foi feito</h3>
+<div class="passo"><div class="n">1</div><div><strong>Ollama em modo Vulkan.</strong> O Vulkan já vem no Ollama e leu o prompt cerca de 3 vezes mais rápido, com a mesma acurácia (34/35). Para ativar, defina duas variáveis de ambiente do usuário do Windows e reinicie o Ollama (feche-o pela bandeja do sistema e abra de novo):
+<pre>setx OLLAMA_VULKAN 1
+setx CUDA_VISIBLE_DEVICES -1</pre>
+Para conferir, rode <code>ollama ps</code> com o modelo carregado: a coluna PROCESSOR deve mostrar <code>100% GPU</code>. Para desfazer, apague as duas variáveis em "Variáveis de ambiente" do Windows e reinicie o Ollama. As variáveis valem para todos os modelos do Ollama nesta máquina.</div></div>
+<div class="passo"><div class="n">2</div><div><strong>Modelo inteiro na GPU:</strong> <code>LLM_NUM_GPU=99</code> no <code>.env</code>. O qwen2.5:7b ocupa cerca de 4,5 GB e cabe nos ~5,1 GB livres da placa. Se faltar memória, por exemplo com muitos programas abertos, o chatbot registra um aviso e volta ao ajuste automático.</div></div>
+<div class="passo"><div class="n">3</div><div><strong>Carregamento na subida:</strong> ao iniciar, o servidor carrega o modelo e já processa a parte fixa do prompt (regras e instruções). O Ollama reaproveita essa parte em todas as perguntas, e o modelo fica carregado por 2 horas após a última pergunta (<code>LLM_KEEP_ALIVE</code>).</div></div>
+<div class="passo"><div class="n">4</div><div><strong>Resposta aparecendo enquanto é escrita:</strong> a interface usa a rota <code>POST /chat/stream</code>, que envia o texto em pedaços (uma linha JSON por evento: <code>parcial</code> com cada pedaço e, no fim, <code>final</code> com a resposta completa, as fontes e o id da conversa). A resposta final é a que vale. Se as proteções da seção 7 trocarem o texto do modelo, por exemplo por uma recusa padronizada, a mensagem na tela é substituída. Navegadores sem suporte usam a rota <code>/chat</code> normal.</div></div>
+
+<h3>Resultado no navegador</h3>
+<table>
+  <tr><th>Pergunta</th><th class="num">Texto começa</th><th class="num">Resposta completa</th></tr>
+  <tr><td>o que acontece se eu reprovar por falta?</td><td class="num">5,2 s</td><td class="num">6,4 s</td></tr>
+  <tr><td>como faço pra ser monitor?</td><td class="num">1,7 s</td><td class="num">5,6 s</td></tr>
+  <tr><td>como faço pra trancar a matricula?*</td><td class="num">0,9 s</td><td class="num">9,0 s</td></tr>
+  <tr><td>Qual o prazo para entregar as ats?</td><td class="num">0,9 s</td><td class="num">1,3 s</td></tr>
+  <tr><td>oi / quais as materias do 5 periodo?</td><td class="num">imediato</td><td class="num">imediato</td></tr>
+</table>
+<p class="pequeno">* Pergunta já feita antes no mesmo servidor, por isso o texto começou mais cedo. Numa pergunta nova, o texto começa em cerca de 2 a 5 segundos. Saudações e consultas à grade são respondidas pelo código, sem o modelo.</p>
+<div class="caixa"><strong>Ideia testada e descartada:</strong> mover os trechos da mensagem de sistema para a mensagem do aluno, para o Ollama reaproveitar mais processamento entre perguntas, baixou o acerto de 34/35 para 31/35 sem ganho de tempo, porque a parte fixa do prompt já era reaproveitada. A mudança foi desfeita.</div>
+
+<h2>10. Validação e resultados</h2>
+<h3>Metodologia</h3>
+<ul>
+  <li><strong>Gabarito verificado:</strong> 35 perguntas com resposta conferida no Manual e na grade, escritas como os alunos escrevem, e 12 perguntas sem resposta na base ou fora do escopo, em que o chatbot deve recusar sem inventar datas.</li>
+  <li><strong>Modelo real:</strong> as perguntas rodaram com o modelo real, numa instância separada, com registros numa pasta temporária. Os logs reais não foram alterados.</li>
+  <li><strong>Rodadas repetidas:</strong> cada configuração rodou duas vezes, porque o modelo varia um pouco entre execuções.</li>
+  <li><strong>Diagnóstico da busca:</strong> foi medido separadamente, para distinguir erro de busca de erro de leitura do modelo.</li>
+</ul>
+<h3>Evolução</h3>
+<table>
+  <tr><th>Configuração</th><th class="num">Com resposta</th><th class="num">Recusas corretas</th><th class="num">Tempo médio</th></tr>
+  <tr><td>gemma3:4b, base original</td><td class="num">18/26*</td><td class="num">10/12</td><td class="num">~6 s</td></tr>
+  <tr><td>gemma3:4b, base corrigida</td><td class="num">24/35</td><td class="num">12/12</td><td class="num">~7 s</td></tr>
+  <tr><td>qwen2.5:7b, base corrigida</td><td class="num">33/35</td><td class="num">12/12</td><td class="num">~14 s</td></tr>
+  <tr><td>qwen2.5:7b com todas as melhorias (3 rodadas)</td><td class="num">34/35</td><td class="num">12/12</td><td class="num">~7 s</td></tr>
+  <tr><td>qwen2.5:7b, Vulkan e modelo inteiro na GPU</td><td class="num"><strong>34/35</strong></td><td class="num"><strong>12/12</strong></td><td class="num"><strong>~5,5 s</strong></td></tr>
+</table>
+<p class="pequeno">* Primeira versão do gabarito, com 26 perguntas. As demais linhas usam o gabarito completo de 35. O tempo caiu de 14 s para 7 s com o contexto de 4096 tokens e sem outros testes disputando a placa de vídeo, e para 5,5 s com as mudanças da seção 9. O tempo médio inclui respostas instantâneas da grade. Só nas respostas escritas pelo modelo, a mais demorada caiu de 25,1 s para 11,3 s.</p>
+<table>
+  <tr><th>Outras medidas</th><th>Antes</th><th>Depois</th></tr>
+  <tr><td>Perguntas sobre a grade (59)</td><td>30 corretas</td><td>57 corretas</td></tr>
+  <tr><td>Pedidos desnecessários de dado feitos pelo modelo</td><td>25 de 59</td><td>0</td></tr>
+  <tr><td>Trecho com a resposta chega ao modelo (27 perguntas)</td><td>23</td><td>26</td></tr>
+  <tr><td>Testes automatizados</td><td>—</td><td>191, todos aprovados</td></tr>
+</table>
+
+<h2>11. Como validar novas mudanças</h2>
+<p>Depois de qualquer mudança no código, nos parâmetros ou nos documentos, rode as três verificações:</p>
+<pre># 1. Testes automatizados (segundos; não usam o Ollama)
+python -m pytest
+
+# 2. Busca: o trecho com a resposta chega ao modelo? (cerca de 1 minuto; não usa o Ollama)
+python avaliacao/diagnostico_busca.py
+
+# 3. Respostas com o modelo real contra o gabarito (cerca de 5 minutos)
+python avaliacao/validar_respostas.py</pre>
+<ul>
+  <li><strong>Compare duas rodadas:</strong> o modelo varia um pouco entre execuções, então rode pelo menos duas antes de concluir que algo mudou.</li>
+  <li><strong>Gabarito ao trocar documentos:</strong> revise as perguntas em <code>avaliacao/validar_respostas.py</code> e <code>avaliacao/diagnostico_busca.py</code>.</li>
+  <li><strong>Resultados:</strong> ficam em <code>avaliacao/resultados/</code>.</li>
+</ul>
+
+<h2>12. Limitações conhecidas e próximos passos</h2>
+<ul>
+  <li><strong>Documentos removidos da base:</strong> os calendários letivos (presencial e EaD), critérios de avaliação, canais e serviços, página do curso e página da unidade foram removidos. Por isso, perguntas sobre datas e prazos (aulas, provas, entregas de AT, trancamento) não têm resposta e o chatbot orienta o aluno a consultar o Calendário Letivo. Reenviar esses PDFs pelo painel é a melhoria de maior impacto.</li>
+  <li><strong>Nivelamento:</strong> "o nivelamento conta como atividade complementar?" recebe "não localizei", embora o Manual diga que o nivelamento dá até 20 horas de atividades complementares. O trecho é encontrado, mas o modelo não faz a ligação.</li>
+  <li><strong>Grade de um curso só:</strong> as respostas exatas da grade valem para a matriz 109AN de Sistemas de Informação. Outras matrizes no mesmo formato de PDF devem funcionar na conversão, mas a resposta exata precisa ser adaptada.</li>
+  <li><strong>Hardware:</strong> numa GPU de 6 GB, o qwen2.5:7b cabe inteiro com pouca folga (cerca de 4,5 GB de 5,1 GB livres). Com muitos programas usando a placa, parte do modelo volta ao processador e as respostas ficam mais lentas. Sem o Vulkan, numa GTX 16xx, respostas longas podem passar de 25 segundos (seção 9).</li>
+  <li><strong>Suspensão do Windows:</strong> com o computador em suspensão, o servidor e os testes param. Para uso contínuo, desative a suspensão.</li>
+  <li><strong>Gabarito automático:</strong> a validação confere termos esperados nas respostas. Uma revisão humana periódica das conversas no painel continua recomendada.</li>
+</ul>
+
+<h2>13. Solução de problemas</h2>
+<table>
+  <tr><th style="width:34%">Sintoma</th><th>O que fazer</th></tr>
+  <tr><td><code>[Errno 10048] ... port 8000</code> ao iniciar</td><td>Outro servidor já usa a porta 8000. Feche o outro terminal ou finalize o processo <code>python</code> no Gerenciador de Tarefas e inicie de novo.</td></tr>
+  <tr><td>Chat responde "O servidor não conseguiu processar a pergunta"</td><td>A página está desatualizada. Recarregue com <code>Ctrl+F5</code>, informe o nome e pergunte de novo.</td></tr>
+  <tr><td>Chat responde "Não consegui conectar ao servidor"</td><td>O servidor está parado. Rode <code>.\iniciar.bat</code>.</td></tr>
+  <tr><td>Respostas "Modelo de linguagem indisponível"</td><td>O Ollama está fechado ou o modelo não foi baixado. Abra o Ollama e rode <code>ollama pull qwen2.5:7b</code>.</td></tr>
+  <tr><td>Respostas lentas (mais de 15 segundos)</td><td>Rode <code>ollama ps</code>. Se aparecer <code>CPU/GPU</code> em vez de <code>100% GPU</code>, feche programas que usam a placa de vídeo, confirme <code>LLM_NUM_GPU=99</code> no <code>.env</code> e reinicie o servidor. Confira também se o Vulkan está ativo: no log do Ollama (<code>%LOCALAPPDATA%\Ollama\server.log</code>), a linha "inference compute" deve dizer <code>library=Vulkan</code>.</td></tr>
+  <tr><td>Erro de GPU ou Ollama instável depois de ativar o Vulkan</td><td>Desfaça o Vulkan apagando <code>OLLAMA_VULKAN</code> e <code>CUDA_VISIBLE_DEVICES</code> das variáveis de ambiente do usuário e reinicie o Ollama.</td></tr>
+  <tr><td>Download do modelo falha (<code>tls: bad record MAC</code>)</td><td>Erro de rede. Repita <code>ollama pull qwen2.5:7b</code>, que continua de onde parou.</td></tr>
+  <tr><td>PDF convertido com conteúdo faltando</td><td>Confira o <code>.md</code> em <code>data/documentos/</code>. Se a página for uma digitalização sem texto, o conteúdo depende do OCR e pode sair incompleto.</td></tr>
+  <tr><td>Resposta errada sobre um assunto específico</td><td>Rode <code>avaliacao/diagnostico_busca.py</code> para ver se o trecho certo chega ao modelo. Se não chegar, o problema é de busca ou de conversão. Se chegar, é de leitura do modelo.</td></tr>
+</table>
+
+<h2>14. Arquivos do projeto</h2>
+<table>
+  <tr><th>Arquivo</th><th>Conteúdo</th></tr>
+  <tr><td><code>app/main.py</code></td><td>Rotas da API (inclusive <code>/chat/stream</code>), login do painel e entrega da interface</td></tr>
+  <tr><td><code>app/llm.py</code></td><td>Conexão com o Ollama: streaming, camadas na GPU (<code>LLM_NUM_GPU</code>) e carregamento na subida</td></tr>
+  <tr><td><code>app/rag.py</code></td><td>Fluxo das respostas: busca, esclarecimentos, geração e proteções</td></tr>
+  <tr><td><code>app/matriz.py</code></td><td>Respostas exatas da grade curricular</td></tr>
+  <tr><td><code>app/config.py</code></td><td>Configuração, prompt padrão e regras obrigatórias</td></tr>
+  <tr><td><code>app/docling_pdf.py</code></td><td>Conversão de PDF com o Docling</td></tr>
+  <tr><td><code>app/docling_layout.py</code></td><td>Reconstrução de fluxogramas e tabelas e remoção de cabeçalhos e rodapés</td></tr>
+  <tr><td><code>app/indexacao.py</code></td><td>Divisão em blocos, contexto dos parágrafos (§) e índice vetorial</td></tr>
+  <tr><td><code>app/servico.py</code></td><td>Envio, listagem e remoção de documentos, com reindexação</td></tr>
+  <tr><td><code>app/registros.py</code></td><td>Registro de interações (com o nome do aluno) e avaliações</td></tr>
+  <tr><td><code>web/</code></td><td>Chat (<code>index.html</code>, <code>app.js</code>) e painel (<code>admin.html</code>, <code>admin.js</code>, <code>admin.css</code>)</td></tr>
+  <tr><td><code>avaliacao/validar_respostas.py</code></td><td>Validação com o modelo real e o gabarito</td></tr>
+  <tr><td><code>avaliacao/diagnostico_busca.py</code></td><td>Diagnóstico da busca, sem o modelo</td></tr>
+  <tr><td><code>tests/</code></td><td>191 testes automatizados</td></tr>
+  <tr><td><code>data/documentos/</code>, <code>data/docling/</code>, <code>data/originais/</code></td><td>Textos indexados, estrutura do Docling e PDFs originais</td></tr>
+</table>
+
+</body>
+</html>

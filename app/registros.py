@@ -3,7 +3,7 @@
 Arquivos gerados em registros/:
 - interacoes.jsonl: pergunta, trechos recuperados, resposta, modo e tempo de processamento;
 - avaliacoes.jsonl: avaliação do aluno (útil / não útil) para cada interação.
-Nenhum dado pessoal é solicitado ao aluno (RNF04).
+O aluno informa apenas o nome antes de conversar; ele é gravado junto de cada interação.
 """
 from __future__ import annotations
 
@@ -44,12 +44,13 @@ class Registro:
         with self._lock, arquivo.open("a", encoding="utf-8") as f:
             f.write(json.dumps(registro, ensure_ascii=False) + "\n")
 
-    def registrar_interacao(self, sessao_id: str, pergunta: str, resposta) -> str:
+    def registrar_interacao(self, sessao_id: str, pergunta: str, resposta, nome: str = "") -> str:
         interacao_id = uuid.uuid4().hex
         self._gravar(self.arq_interacoes, {
             "id": interacao_id,
             "data_hora": datetime.now().isoformat(timespec="seconds"),
             "sessao_id": sessao_id,
+            "nome": nome,
             "pergunta": pergunta,
             "resposta": resposta.resposta,
             "modo": resposta.modo,
@@ -61,6 +62,12 @@ class Registro:
 
     def existe(self, interacao_id: str) -> bool:
         return interacao_id in self._ids
+
+    def pergunta_de(self, interacao_id: str) -> str | None:
+        for registro in reversed(self._ler(self.arq_interacoes)):
+            if registro.get("id") == interacao_id:
+                return registro.get("pergunta")
+        return None
 
     def registrar_avaliacao(self, interacao_id: str, util: bool, comentario: str | None = None) -> bool:
         if not self.existe(interacao_id):

@@ -1,6 +1,6 @@
 "use strict";
 
-const estado = { sessaoId: lerSessao(), enviando: false };
+const estado = { sessaoId: lerSessao(), nome: lerNome(), enviando: false };
 const $ = (seletor) => document.querySelector(seletor);
 
 // ---------------------------------------------------------------- sessão (histórico da conversa)
@@ -9,6 +9,12 @@ function lerSessao() {
 }
 function salvarSessao(id) {
   try { sessionStorage.setItem("sessao_id", id); } catch { /* armazenamento indisponível */ }
+}
+function lerNome() {
+  try { return (sessionStorage.getItem("nome") || "").trim(); } catch { return ""; }
+}
+function salvarNome(nome) {
+  try { sessionStorage.setItem("nome", nome); } catch { /* armazenamento indisponível */ }
 }
 function limparSessao() {
   estado.sessaoId = null;
@@ -123,39 +129,117 @@ function adicionarAvaliacao(mensagem, interacaoId) {
 }
 
 // ---------------------------------------------------------------- envio da pergunta (RF01)
+async function perguntarSemStream(corpo) {
+  const resposta = await fetch("/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(corpo),
+  });
+  if (!resposta.ok) throw new Error(`HTTP ${resposta.status}`);
+  return resposta.json();
+}
+
+// Usa /chat/stream (uma linha JSON por evento) para mostrar o texto enquanto o modelo escreve.
+// Sem suporte a stream no navegador, ou com servidor antigo sem a rota, usa /chat.
+async function perguntarAoServidor(corpo, aoReceberParte) {
+  if (!window.ReadableStream || !window.TextDecoder) return perguntarSemStream(corpo);
+  const resposta = await fetch("/chat/stream", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(corpo),
+  });
+  if (resposta.status === 404 || resposta.status === 405) return perguntarSemStream(corpo);
+  if (!resposta.ok || !resposta.body) throw new Error(`HTTP ${resposta.status}`);
+
+  const leitor = resposta.body.getReader();
+  const decodificador = new TextDecoder();
+  let pendente = "";
+  let final = null;
+  const tratarLinha = (linha) => {
+    if (!linha.trim()) return;
+    const evento = JSON.parse(linha);
+    if (evento.tipo === "parcial") aoReceberParte(evento.texto);
+    else if (evento.tipo === "final") final = evento;
+    else if (evento.tipo === "erro") throw new Error(evento.mensagem || "erro no servidor");
+  };
+  for (;;) {
+    const { value, done } = await leitor.read();
+    if (done) break;
+    pendente += decodificador.decode(value, { stream: true });
+    const linhas = pendente.split("\n");
+    pendente = linhas.pop();
+    linhas.forEach(tratarLinha);
+  }
+  tratarLinha(pendente + decodificador.decode());
+  if (!final) throw new Error("resposta incompleta do servidor");
+  return final;
+}
+
 async function enviarPergunta(texto) {
   const pergunta = String(texto || "").trim();
-  if (!pergunta || estado.enviando) return;
+  if (!pergunta || estado.enviando || !estado.nome) return;
 
   estado.enviando = true;
   $("#enviar").disabled = true;
   adicionarMensagem("user", pergunta);
   $("#pergunta").value = "";
   const aguardando = adicionarMensagem("bot digitando", "Consultando os documentos oficiais…");
+  let segundosEspera = 0;
+  const progresso = window.setInterval(() => {
+    segundosEspera += 5;
+    const detalhe = segundosEspera >= 15
+      ? " O primeiro uso pode levar até dois minutos enquanto o modelo é carregado."
+      : "";
+    const textoAguardando = aguardando.querySelector(".texto");
+    if (textoAguardando) textoAguardando.textContent = `Consultando os documentos oficiais… ${segundosEspera}s.${detalhe}`;
+  }, 5000);
+
+  // Mensagem que recebe o texto enquanto o modelo escreve; criada no primeiro pedaço.
+  let mensagem = null;
+  let textoParcial = "";
+  const aoReceberParte = (parte) => {
+    if (!mensagem) {
+      window.clearInterval(progresso);
+      aguardando.remove();
+      mensagem = adicionarMensagem("bot escrevendo", "");
+    }
+    textoParcial += parte;
+    mensagem.querySelector(".texto").textContent = textoParcial;
+    rolarParaFim();
+  };
 
   try {
-    const resposta = await fetch("/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pergunta, sessao_id: estado.sessaoId }),
-    });
-    if (!resposta.ok) throw new Error(`HTTP ${resposta.status}`);
-    const dados = await resposta.json();
+    const dados = await perguntarAoServidor(
+      { nome: estado.nome, pergunta, sessao_id: estado.sessaoId }, aoReceberParte,
+    );
     estado.sessaoId = dados.sessao_id;
     salvarSessao(dados.sessao_id);
 
     aguardando.remove();
-    const mensagem = adicionarMensagem("bot", dados.resposta);
+    // A resposta final é a definitiva: pode corrigir o texto parcial (ex.: recusa padronizada).
+    if (mensagem) {
+      mensagem.classList.remove("escrevendo");
+      const corpo = mensagem.querySelector(".texto");
+      corpo.replaceChildren();
+      preencherTexto(corpo, dados.resposta);
+    } else {
+      mensagem = adicionarMensagem("bot", dados.resposta);
+    }
     if (dados.modo === "extrativo") {
       mensagem.appendChild(criar("div", "aviso", "Modelo de linguagem indisponível: exibindo trechos dos documentos."));
     }
     adicionarFontes(mensagem, dados.fontes);
-    adicionarAvaliacao(mensagem, dados.id);
+    if (dados.modo !== "esclarecimento" && dados.modo !== "conversa") adicionarAvaliacao(mensagem, dados.id);
   } catch (erro) {
     aguardando.remove();
-    adicionarMensagem("bot erro", "Não foi possível obter a resposta agora. Tente novamente em instantes.");
+    if (mensagem) mensagem.remove();
+    // fetch só rejeita com TypeError quando o servidor não pôde ser alcançado.
+    adicionarMensagem("bot erro", erro instanceof TypeError
+      ? "Não consegui conectar ao servidor. Verifique se ele está em execução e tente novamente."
+      : "O servidor não conseguiu processar a pergunta. Recarregue a página e tente novamente.");
     console.error(erro);
   } finally {
+    window.clearInterval(progresso);
     estado.enviando = false;
     $("#enviar").disabled = false;
     $("#pergunta").focus();
@@ -212,6 +296,25 @@ document.addEventListener("DOMContentLoaded", () => {
     $("#pergunta").focus();
   });
 
+  const tela = $("#identificacao");
+  const liberarChat = () => {
+    tela.hidden = true;
+    $("#pergunta").focus();
+  };
+  if (estado.nome) {
+    liberarChat();
+  } else {
+    tela.hidden = false;
+    $("#nome").focus();
+  }
+  $("#form-nome").addEventListener("submit", (evento) => {
+    evento.preventDefault();
+    const nome = $("#nome").value.split(/\s+/).join(" ").trim();
+    if (!nome) { $("#nome").focus(); return; }
+    estado.nome = nome;
+    salvarNome(nome);
+    liberarChat();
+  });
+
   carregarStatus();
-  $("#pergunta").focus();
 });

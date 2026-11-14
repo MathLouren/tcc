@@ -10,7 +10,7 @@ if [ ! -x .venv/bin/python ]; then
   "$PYTHON" -m venv .venv
 fi
 
-if [ ! -f .venv/.instalado ]; then
+if [ ! -f .venv/.instalado ] || ! .venv/bin/python -c "import docling, multipart" >/dev/null 2>&1; then
   echo "Instalando dependências. Na primeira vez isso pode levar alguns minutos..."
   .venv/bin/python -m pip install --upgrade pip
   # PyTorch somente para CPU (evita baixar as bibliotecas CUDA no Linux)
@@ -21,7 +21,7 @@ fi
 
 if [ ! -f .env ]; then
   cp .env.example .env
-  echo "Arquivo .env criado. Ajuste OLLAMA_URL e ADMIN_KEY nele se necessário."
+  echo "Arquivo .env criado. Ajuste OLLAMA_URL, EMAIL e PASS nele se necessário."
 fi
 
 echo "Iniciando o chatbot em http://localhost:${PORTA:-8000} (Ctrl+C para encerrar)"

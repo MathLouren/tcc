@@ -1,0 +1,56 @@
+{
+  "descricao": "Conjunto de perguntas de validação (seção 4.3 do TCC). termos_esperados: lista de grupos; a resposta é considerada correta quando contém ao menos um termo de cada grupo (sem diferenciar maiúsculas e acentos). Perguntas com requer_categoria só são avaliadas quando há documento daquela categoria indexado.",
+  "perguntas": [
+    {"id": 1, "categoria": "Matrícula e rematrícula", "pergunta": "Qual é o período de matrícula dos veteranos para o semestre 2026.2?", "documentos_esperados": ["calendario_letivo_2026_2_sao_goncalo.md"], "termos_esperados": [["julho"]]},
+    {"id": 2, "categoria": "Matrícula e rematrícula", "pergunta": "Até quando posso fazer matrícula fora do prazo?", "documentos_esperados": ["calendario_letivo_2026_2_sao_goncalo.md"], "termos_esperados": [["10 de setembro", "10/09", "01 a 10"]]},
+    {"id": 3, "categoria": "Matrícula e rematrícula", "pergunta": "Quando começa a renovação de matrícula para 2027.1?", "documentos_esperados": ["calendario_letivo_2026_2_sao_goncalo.md"], "termos_esperados": [["23 de dezembro", "23/12"]]},
+    {"id": 4, "categoria": "Matrícula e rematrícula", "pergunta": "Quando abre o período de reabertura de matrícula e transferência para o primeiro semestre de 2027?", "documentos_esperados": ["calendario_letivo_2026_2_sao_goncalo.md"], "termos_esperados": [["16 de novembro", "16/11"]]},
+    {"id": 5, "categoria": "Matrícula e rematrícula", "pergunta": "Posso incluir disciplinas fora do prazo de matrícula?", "documentos_esperados": ["calendario_letivo_2026_2_sao_goncalo.md"], "termos_esperados": [["vaga"]]},
+
+    {"id": 6, "categoria": "Calendário e prazos", "pergunta": "Quando começam as aulas dos veteranos?", "documentos_esperados": ["calendario_letivo_2026_2_sao_goncalo.md"], "termos_esperados": [["04 de agosto", "4 de agosto", "04/08"]]},
+    {"id": 7, "categoria": "Calendário e prazos", "pergunta": "Quando começam as aulas dos calouros?", "documentos_esperados": ["calendario_letivo_2026_2_sao_goncalo.md"], "termos_esperados": [["10 de agosto", "10/08"]]},
+    {"id": 8, "categoria": "Calendário e prazos", "pergunta": "Qual é o prazo final para trancar a matrícula?", "documentos_esperados": ["calendario_letivo_2026_2_sao_goncalo.md"], "termos_esperados": [["30 de setembro", "30/09"]]},
+    {"id": 9, "categoria": "Calendário e prazos", "pergunta": "Quando termina o semestre 2026.2?", "documentos_esperados": ["calendario_letivo_2026_2_sao_goncalo.md"], "termos_esperados": [["23 de dezembro", "23/12"]]},
+    {"id": 10, "categoria": "Calendário e prazos", "pergunta": "Quais são os feriados de novembro?", "documentos_esperados": ["calendario_letivo_2026_2_sao_goncalo.md"], "termos_esperados": [["finados"], ["proclamacao"], ["consciencia negra"]]},
+    {"id": 11, "categoria": "Calendário e prazos", "pergunta": "Qual é o prazo para postar o Trabalho de Conclusão de Curso?", "documentos_esperados": ["calendario_letivo_2026_2_sao_goncalo.md"], "termos_esperados": [["12 de dezembro", "12/12"]]},
+    {"id": 12, "categoria": "Calendário e prazos", "pergunta": "Até quando devo inserir o termo de compromisso de estágio no Espaço do Aluno?", "documentos_esperados": ["calendario_letivo_2026_2_sao_goncalo.md"], "termos_esperados": [["30 de setembro", "30/09"]]},
+    {"id": 13, "categoria": "Calendário e prazos", "pergunta": "Quantos dias letivos tem o segundo semestre de 2026?", "documentos_esperados": ["calendario_letivo_2026_2_sao_goncalo.md"], "termos_esperados": [["118"]]},
+
+    {"id": 14, "categoria": "Avaliação e notas", "pergunta": "Como é calculada a média do semestre?", "documentos_esperados": ["criterios_de_avaliacao.md"], "termos_esperados": [["v1"], ["vt"], ["v2"]]},
+    {"id": 15, "categoria": "Avaliação e notas", "pergunta": "Com que média eu passo direto sem fazer a VS?", "documentos_esperados": ["criterios_de_avaliacao.md"], "termos_esperados": [["7"]]},
+    {"id": 16, "categoria": "Avaliação e notas", "pergunta": "O que acontece se a minha média ficar entre 4 e 7?", "documentos_esperados": ["criterios_de_avaliacao.md"], "termos_esperados": [["vs", "verificacao suplementar"]]},
+    {"id": 17, "categoria": "Avaliação e notas", "pergunta": "Qual é a frequência mínima exigida para ser aprovado?", "documentos_esperados": ["criterios_de_avaliacao.md"], "termos_esperados": [["75"]]},
+    {"id": 18, "categoria": "Avaliação e notas", "pergunta": "Perdi a V1. Como faço para pedir a segunda chamada?", "documentos_esperados": ["criterios_de_avaliacao.md", "calendario_letivo_2026_2_sao_goncalo.md"], "termos_esperados": [["requerimento", "solicit"], ["2 dias", "dois dias", "2 (dois) dias"]]},
+    {"id": 19, "categoria": "Avaliação e notas", "pergunta": "Quando será a segunda chamada da V2?", "documentos_esperados": ["calendario_letivo_2026_2_sao_goncalo.md"], "termos_esperados": [["10 de dezembro", "10/12"]]},
+    {"id": 20, "categoria": "Avaliação e notas", "pergunta": "Existe segunda chamada para a VS?", "documentos_esperados": ["calendario_letivo_2026_2_sao_goncalo.md"], "termos_esperados": [["nao ha", "nao existe", "nao tem", "nao e possivel", "nao possui"]]},
+    {"id": 21, "categoria": "Avaliação e notas", "pergunta": "Quando são aplicadas as provas V1 das disciplinas presenciais?", "documentos_esperados": ["calendario_letivo_2026_2_sao_goncalo.md"], "termos_esperados": [["outubro"], ["10"]]},
+    {"id": 22, "categoria": "Avaliação e notas", "pergunta": "Qual é o período de aplicação da VS?", "documentos_esperados": ["calendario_letivo_2026_2_sao_goncalo.md"], "termos_esperados": [["14 a 19", "14/12"]]},
+    {"id": 23, "categoria": "Avaliação e notas", "pergunta": "Em quantas disciplinas posso fazer segunda chamada?", "documentos_esperados": ["criterios_de_avaliacao.md"], "termos_esperados": [["duas", "2 disciplinas", "dois"]]},
+    {"id": 24, "categoria": "Avaliação e notas", "pergunta": "Em quanto tempo o professor deve devolver a prova corrigida?", "documentos_esperados": ["criterios_de_avaliacao.md"], "termos_esperados": [["21 dias"]]},
+
+    {"id": 25, "categoria": "Disciplinas e matriz curricular", "pergunta": "Posso cursar uma disciplina em que reprovei junto com a disciplina que depende dela?", "documentos_esperados": ["criterios_de_avaliacao.md"], "termos_esperados": [["vaga"], ["horario"]]},
+    {"id": 26, "categoria": "Disciplinas e matriz curricular", "pergunta": "Quais são os pré-requisitos de Banco de Dados II?", "documentos_esperados": [], "termos_esperados": [], "requer_categoria": "matriz_curricular"},
+    {"id": 27, "categoria": "Disciplinas e matriz curricular", "pergunta": "Quantos anos dura o curso de Sistemas de Informação?", "documentos_esperados": ["curso_sistemas_informacao.md"], "termos_esperados": [["4 anos", "quatro anos"]]},
+    {"id": 28, "categoria": "Disciplinas e matriz curricular", "pergunta": "Em que turno é oferecido o curso de Sistemas de Informação?", "documentos_esperados": ["curso_sistemas_informacao.md"], "termos_esperados": [["noturno", "noite"]]},
+    {"id": 29, "categoria": "Disciplinas e matriz curricular", "pergunta": "Quais áreas o curso de Sistemas de Informação aborda?", "documentos_esperados": ["curso_sistemas_informacao.md"], "termos_esperados": [["banco de dados"], ["engenharia de software", "redes"]]},
+
+    {"id": 30, "categoria": "Documentos e serviços", "pergunta": "Qual é o endereço do Espaço do Aluno?", "documentos_esperados": ["canais_e_servicos_ao_aluno.md"], "termos_esperados": [["cdu.asoec.com.br"]]},
+    {"id": 31, "categoria": "Documentos e serviços", "pergunta": "Onde acesso as disciplinas EAD?", "documentos_esperados": ["canais_e_servicos_ao_aluno.md"], "termos_esperados": [["ead.universo.edu.br", "moodle"]]},
+    {"id": 32, "categoria": "Documentos e serviços", "pergunta": "Quando posso me inscrever no concurso de monitoria?", "documentos_esperados": ["calendario_letivo_2026_2_sao_goncalo.md"], "termos_esperados": [["dezembro"], ["15"]]},
+    {"id": 33, "categoria": "Documentos e serviços", "pergunta": "Como consulto a validade do meu diploma digital?", "documentos_esperados": ["canais_e_servicos_ao_aluno.md"], "termos_esperados": [["validacao-documento-digital", "consulta de diploma"]]},
+    {"id": 34, "categoria": "Documentos e serviços", "pergunta": "Em que período devo solicitar a R1?", "documentos_esperados": ["calendario_letivo_2026_2_sao_goncalo.md"], "termos_esperados": [["outubro"], ["15"], ["20"]]},
+
+    {"id": 35, "categoria": "Infraestrutura e contatos", "pergunta": "Qual é o endereço do campus São Gonçalo?", "documentos_esperados": ["universidade_sao_goncalo.md", "criterios_de_avaliacao.md"], "termos_esperados": [["lambari"]]},
+    {"id": 36, "categoria": "Infraestrutura e contatos", "pergunta": "Qual é o telefone da central de atendimento?", "documentos_esperados": ["universidade_sao_goncalo.md", "canais_e_servicos_ao_aluno.md"], "termos_esperados": [["0800 721 0251"]]},
+    {"id": 37, "categoria": "Infraestrutura e contatos", "pergunta": "O campus tem biblioteca?", "documentos_esperados": ["universidade_sao_goncalo.md"], "termos_esperados": [["biblioteca"]]},
+    {"id": 38, "categoria": "Infraestrutura e contatos", "pergunta": "Quais são as formas de ingresso na graduação?", "documentos_esperados": ["universidade_sao_goncalo.md"], "termos_esperados": [["enem"], ["vestibular"]]},
+    {"id": 39, "categoria": "Infraestrutura e contatos", "pergunta": "O campus tem alguma clínica que atende a comunidade?", "documentos_esperados": ["universidade_sao_goncalo.md"], "termos_esperados": [["fisioterapia"]]},
+
+    {"id": 40, "categoria": "Fora do escopo", "pergunta": "Qual é o valor da minha mensalidade este mês?", "fora_do_escopo": true},
+    {"id": 41, "categoria": "Fora do escopo", "pergunta": "Qual foi a minha nota na V1 de Cálculo?", "fora_do_escopo": true},
+    {"id": 42, "categoria": "Fora do escopo", "pergunta": "Quem ganhou a Copa do Mundo de 2022?", "fora_do_escopo": true},
+    {"id": 43, "categoria": "Fora do escopo", "pergunta": "Me passa uma receita de bolo de chocolate.", "fora_do_escopo": true},
+    {"id": 44, "categoria": "Fora do escopo", "pergunta": "Qual é a senha do Wi-Fi do campus?", "fora_do_escopo": true},
+    {"id": 45, "categoria": "Fora do escopo", "pergunta": "Qual é o salário dos professores da UNIVERSO?", "fora_do_escopo": true}
+  ]
+}

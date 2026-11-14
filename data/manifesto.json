@@ -2,44 +2,57 @@
   "descricao": "Manifesto da base de conhecimento do Chatbot Institucional UNIVERSO. Cada documento em data/documentos pode ter aqui título, origem, URL, data de atualização e categoria. Esses dados aparecem nas fontes de cada resposta (RF04). Arquivos sem entrada no manifesto também são indexados, usando o nome do arquivo como título.",
   "documentos": [
     {
-      "arquivo": "calendario_letivo_2026_2_sao_goncalo.md",
-      "titulo": "Calendário Letivo 2026.2 – Universidade São Gonçalo",
-      "origem": "Sítio institucional (PDF oficial transcrito; original em data/originais)",
-      "url": "https://universo.edu.br/wp-content/uploads/2026/08/2026-2-l-Sao-Goncalo-l-Calendario-Letivo-l-22072026.pdf",
-      "atualizado_em": "2026-07-22",
-      "categoria": "calendario"
+      "arquivo": "grade_curricular.md",
+      "titulo": "Grade curricular",
+      "origem": "Upload administrativo processado com Docling",
+      "url": "",
+      "atualizado_em": "2026-11-07",
+      "categoria": "documento",
+      "extrator": "docling",
+      "original": "uploads/grade_curricular.pdf",
+      "estrutura_json": "grade_curricular.docling.json"
     },
     {
-      "arquivo": "criterios_de_avaliacao.md",
-      "titulo": "Critérios de Avaliação – UNIVERSO (Regimento Geral)",
-      "origem": "Sítio institucional (PDF oficial transcrito; original em data/originais)",
-      "url": "https://universo-unificado.prod.universo.edu.br/wp-content/uploads/2017/06/Critérios-de-Avaliação-Universo.pdf",
-      "atualizado_em": "2018-01-10",
-      "categoria": "avaliacao"
+      "arquivo": "calendario_ead_2026_2.md",
+      "titulo": "Calendario ead 2026",
+      "origem": "Upload administrativo processado com Docling",
+      "url": "",
+      "atualizado_em": "2026-11-09",
+      "categoria": "documento",
+      "extrator": "docling",
+      "original": "uploads/calendario_ead_2026_2.pdf",
+      "estrutura_json": "calendario_ead_2026_2.docling.json",
+      "ingestao": {
+        "paginas": 2,
+        "caracteres": 8260,
+        "secoes": 5,
+        "blocos": 9,
+        "blocos_com_tabela": 7,
+        "tokens": 2232,
+        "tokens_por_bloco": 248,
+        "avisos": []
+      }
     },
     {
-      "arquivo": "universidade_sao_goncalo.md",
-      "titulo": "Universidade São Gonçalo – página da unidade",
-      "origem": "Sítio institucional (HTML)",
-      "url": "https://universo.edu.br/a-universo/estrutura/sao-goncalo/",
-      "atualizado_em": "2026-10-23",
-      "categoria": "campus"
-    },
-    {
-      "arquivo": "curso_sistemas_informacao.md",
-      "titulo": "Curso de Sistemas de Informação",
-      "origem": "Sítio institucional (HTML)",
-      "url": "https://universo.edu.br/cursos/sistemas-de-informacao/",
-      "atualizado_em": "2026-10-23",
-      "categoria": "curso"
-    },
-    {
-      "arquivo": "canais_e_servicos_ao_aluno.md",
-      "titulo": "Canais de atendimento e serviços ao aluno",
-      "origem": "Sítio institucional (HTML)",
-      "url": "https://universo.edu.br/",
-      "atualizado_em": "2026-10-23",
-      "categoria": "servicos"
+      "arquivo": "universo_l_mia_l_2026_2_l_03112026_2_1.md",
+      "titulo": "Manual Do Aluno",
+      "origem": "Upload administrativo processado com Docling",
+      "url": "",
+      "atualizado_em": "2026-11-14",
+      "categoria": "documento",
+      "extrator": "docling",
+      "original": "uploads/universo_l_mia_l_2026_2_l_03112026_2_1.pdf",
+      "estrutura_json": "universo_l_mia_l_2026_2_l_03112026_2_1.docling.json",
+      "ingestao": {
+        "paginas": 80,
+        "caracteres": 179464,
+        "secoes": 77,
+        "blocos": 124,
+        "blocos_com_tabela": 15,
+        "tokens": 36337,
+        "tokens_por_bloco": 293,
+        "avisos": []
+      }
     }
   ],
   "pendentes": [

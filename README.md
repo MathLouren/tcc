@@ -2,7 +2,31 @@
 
 Sistema de resposta a perguntas em linguagem natural para os alunos do campus São Gonçalo da Universidade Salgado de Oliveira (UNIVERSO), baseado na arquitetura RAG (*Retrieval-Augmented Generation*). Implementa o sistema descrito no capítulo 3 do TCC "Chatbot Institucional UNIVERSO".
 
-O chatbot localiza nos documentos oficiais os trechos que respondem à pergunta, gera a resposta com um modelo de linguagem executado no **Ollama** e mostra as fontes consultadas. Quando nenhum trecho é relevante, ele informa que não encontrou a informação e indica os canais oficiais. Se o Ollama estiver fora do ar, o sistema continua funcionando em **modo extrativo**, exibindo as frases mais relevantes dos documentos.
+O chatbot localiza nos documentos oficiais os trechos que respondem à pergunta, gera a resposta com um modelo de linguagem executado no **Ollama** e mostra as fontes consultadas. Quando uma dúvida depende de curso, modalidade, semestre ou tipo de avaliação, ele solicita apenas os esclarecimentos necessários e refaz a busca com as respostas do aluno. Quando nenhum trecho é relevante, ele informa que não encontrou a informação e indica os canais oficiais. Se o Ollama estiver fora do ar, o sistema continua funcionando em **modo extrativo**, exibindo as frases mais relevantes dos documentos.
+
+### Como uma pergunta é respondida
+
+1. **Saudação ou "quem é você"**: resposta direta, sem busca.
+2. **Dado exato da grade** (disciplinas por período, pré-requisito, créditos, carga horária total, horas de estágio e de atividades complementares, duração do curso): lido da tabela da matriz pelo código.
+3. **Data de avaliação** (AT, AF, AP, AS, V1...): lida das linhas do calendário pelo código, com abertura e fechamento.
+4. **Esclarecimento**: quando a resposta depende de modalidade, avaliação, curso ou semestre, o chatbot pergunta antes.
+5. **Busca híbrida**: similaridade vetorial somada à busca por palavras (BM25 com sinônimos de aluno, como "matéria" para "disciplina"). Sem nenhuma palavra em comum com a base, a recusa é imediata.
+6. **Geração**: o modelo recebe os trechos, as regras obrigatórias, o significado das siglas citadas (extraído dos próprios documentos) e equivalências de vocabulário ("segunda chamada" = "2ª chamada").
+7. **Verificações**: datas e valores em reais que não estão nos trechos geram nova tentativa e, se persistirem, recusa. Pedidos de dado feitos pelo modelo são descartados.
+8. **Citação do documento**: se o modelo recusa mas existe uma frase que contém os termos da pergunta, o chatbot devolve a frase original do documento, entre aspas, com a fonte.
+9. **Cache**: a mesma pergunta, sem depender da conversa, é respondida na hora. Marcar "não útil" tira a resposta do cache.
+
+Perguntas de continuação ("e no EaD?", "qual a nota máxima dela?") usam a pergunta anterior na busca. Perguntas independentes não levam a conversa ao modelo.
+
+### Fluxo de esclarecimento
+
+1. O backend identifica ambiguidades acadêmicas conhecidas antes de gerar uma resposta.
+2. A pendência e a pergunta original são guardadas pelo `sessao_id`.
+3. Cada resposta do aluno preenche um dado ausente, sem repetir dados já informados.
+4. Ao completar os esclarecimentos, o backend junta a pergunta original aos dados informados e executa uma nova recuperação.
+5. O LLM recebe a pergunta original, os esclarecimentos e somente os trechos recuperados nessa nova busca.
+
+Respostas intermediárias usam o modo `esclarecimento`, não apresentam fontes e não exibem os botões de avaliação. Perguntas claras continuam diretamente para a recuperação. Perguntas claras sem cobertura documental recebem a mensagem de limitação institucional, sem perguntas artificiais.
 
 ## Como rodar no ambiente com Ollama
 
@@ -16,7 +40,8 @@ O chatbot localiza nos documentos oficiais os trechos que respondem à pergunta,
    ```
    OLLAMA_URL=http://localhost:11434        # ou http://IP_DA_MAQUINA:11434
    LLM_MODELO=llama3.1:8b                   # o modelo baixado no passo 1
-   ADMIN_KEY=uma-senha-forte                # para as rotas /admin
+   EMAIL=voce@exemplo.com                   # login do painel /admin
+   PASS=uma-senha-forte                     # senha do painel /admin
    ```
 
 3. **Inicie o chatbot:**
@@ -62,7 +87,11 @@ No Linux/macOS, troque `.venv\Scripts\python` por `.venv/bin/python`.
 | O que | Comando | Precisa do Ollama? |
 |---|---|---|
 | Testes unitários e de API (ingestão, recuperação, prompt, histórico, recusa, modo extrativo, rotas e autenticação) | `python -m pytest` | Não |
-| Validação com 45 perguntas reais, em 7 categorias, incluindo perguntas fora do escopo | `python avaliacao/avaliar.py` | Sim (ou `--sem-llm`) |
+| Busca sem o modelo: os trechos enviados contêm os termos esperados? | `python avaliacao/diagnostico_busca.py --termos` | Não |
+| Respostas com o modelo real, gabarito original (35 com resposta, 12 sem) | `python avaliacao/validar_respostas.py` | Sim |
+| Gabarito ampliado (96 com resposta, 15 sem, 8 conversas) | `python avaliacao/validar_respostas.py --gabarito avaliacao/gabarito_ampliado.json` | Sim |
+| Gabarito do calendário EaD (22 com resposta, 4 sem, 2 conversas) | `python avaliacao/validar_respostas.py --gabarito avaliacao/gabarito_calendario.json` | Sim |
+| Validação antiga com 45 perguntas, em 7 categorias | `python avaliacao/avaliar.py` | Sim (ou `--sem-llm`) |
 | Pontuação do questionário de usabilidade SUS | `python avaliacao/sus.py avaliacao/sus_respostas.csv` | Não |
 
 Os testes automatizados usam um embedder e um LLM simulados, por isso rodam em segundos e não dependem de rede.
@@ -83,16 +112,35 @@ curl.exe -X PUT http://localhost:8000/admin/config -H "X-Admin-Key: SUA_CHAVE" -
 
 ## Administração
 
-As rotas administrativas exigem o cabeçalho `X-Admin-Key` com o valor de `ADMIN_KEY`. Se `ADMIN_KEY` estiver vazia, elas ficam desativadas.
+### Painel `/admin`
+
+Acesse `http://localhost:8000/admin` e entre com `EMAIL` e `PASS` do `.env`. O painel tem duas abas:
+
+- **Logs de conversas**: nome do aluno, pergunta, resposta, modo e avaliação de cada interação.
+- **Documentos**:
+  - envio de um ou vários PDFs, convertidos um a um, com o estado de cada arquivo na fila;
+  - relatório de cada conversão (páginas, seções, blocos, tabelas, tokens) e avisos de qualidade, por exemplo PDF digitalizado com pouco texto;
+  - botão **Ver**: mostra os blocos que o chatbot consulta e permite baixar o Markdown, o JSON do Docling, os blocos em JSONL e o PDF original;
+  - **Testar a busca**: mostra os trechos que uma pergunta recupera, sem chamar o modelo;
+  - remoção de documentos.
+
+Antes de conversar, o aluno precisa informar o nome (obrigatório; gravado nos logs).
+
+As rotas `/admin/...` aceitam a sessão do painel (cookie) ou o cabeçalho `X-Admin-Key` com o valor opcional de `ADMIN_KEY`, para scripts. Sem `EMAIL`/`PASS` e sem `ADMIN_KEY`, ficam desativadas.
 
 | Rota | Função |
 |---|---|
 | `POST /chat` | Recebe a pergunta e devolve resposta, fontes, modo e tempo de processamento |
+| `POST /chat/stream` | Igual a `/chat`, mas envia o texto enquanto o modelo escreve (uma linha JSON por evento: `parcial`, depois `final`); é a rota usada pela interface web |
 | `POST /feedback` | Registra a avaliação útil / não útil de uma resposta |
 | `GET /health` | Estado do sistema, modelo de linguagem, documentos e data da última indexação |
 | `POST /admin/reindex` | Reindexa os documentos sem reiniciar o servidor |
+| `POST /admin/documentos` | Recebe um PDF, converte com Docling, reindexa a base e devolve o relatório da conversão |
+| `GET /admin/documentos/{arquivo}/conteudo` | Relatório e blocos extraídos de um documento |
+| `GET /admin/documentos/{arquivo}/baixar?formato=markdown\|json\|blocos\|pdf` | Baixa um dos formatos do documento |
+| `POST /admin/busca` | Trechos que uma pergunta recupera, sem chamar o modelo |
 | `GET /admin/logs?limite=100` | Últimas interações, avaliações e resumo de uso |
-| `GET /admin/config` / `PUT /admin/config` | Consulta ou ajusta `top_k`, `limiar`, `temperatura`, `historico_trocas` e `prompt_sistema` |
+| `GET /admin/config` / `PUT /admin/config` | Consulta ou ajusta `top_k`, `limiar`, `temperatura`, `historico_trocas`, `peso_lexical` e `prompt_sistema` |
 
 Exemplo de reindexação:
 ```
@@ -103,45 +151,72 @@ Os registros ficam em `registros/interacoes.jsonl` e `registros/avaliacoes.jsonl
 
 ## Atualização da base de conhecimento
 
-1. Coloque o arquivo em `data/documentos/`. Os formatos aceitos são PDF, HTML, Markdown (.md) e texto (.txt).
-2. Acrescente uma entrada em `data/manifesto.json` com título, URL, data de atualização e categoria. Esses dados aparecem nas fontes de cada resposta.
-3. Chame `POST /admin/reindex` ou reinicie o servidor depois de apagar a pasta `indice/`.
+Para PDFs, use o upload administrativo. O sistema executa o Docling com OCR e reconhecimento de tabelas e guarda cada documento em quatro formatos:
 
-Documentos digitados em Markdown, com um título `##` por seção, dão os melhores resultados. Calendários em PDF também funcionam: arquivos cujo nome contém "calend" passam por uma limpeza que remove a grade de dias e separa as seções por mês.
+| Formato | Onde fica | Para que serve |
+|---|---|---|
+| PDF original | `data/originais/uploads/` | Fonte de verdade; permite reconverter |
+| Markdown limpo | `data/documentos/` | Texto que é indexado; pode ser corrigido à mão |
+| JSON do Docling | `data/docling/` | Posição de cada texto na página; usado para reconstruir fluxogramas e calendários |
+| Blocos em JSONL | `indice/blocos/` | Uma linha por bloco, com documento, seção, contexto herdado e metadados: é o que o chatbot consulta |
 
-### Documentos já incluídos
+Tratamentos aplicados na conversão:
 
-| Documento | Fonte |
+- **Calendário diagramado** (mini-calendário de cada mês ao lado dos eventos): cada evento é atribuído ao mês pela posição na página e escrito com a data completa, por exemplo "14 de setembro de 2026 – Abertura do período de realização da Avaliação AT".
+- **Fluxograma curricular**: vira tabela de disciplinas por período.
+- **Cabeçalhos e rodapés repetidos** e logotipos: removidos.
+- **Tabelas longas**: cada bloco leva a frase que apresenta a tabela e os nomes das colunas.
+- **Regimentos**: os blocos são cortados nos parágrafos (§) e artigos, para não misturar a regra de um escopo com a de outro.
+
+O manifesto e o índice são atualizados somente se o processamento terminar corretamente.
+
+```powershell
+curl.exe -X POST http://localhost:8000/admin/documentos `
+  -H "X-Admin-Key: SUA_CHAVE" `
+  -F "arquivo=@C:\caminho\manual.pdf;type=application/pdf" `
+  -F "titulo=Manual Acadêmico" `
+  -F "url=https://universo.edu.br/documentos/manual.pdf" `
+  -F "categoria=manual" `
+  -F "atualizado_em=2026-11-07"
+```
+
+O primeiro PDF pode demorar mais porque o Docling baixa seus modelos locais. Os uploads seguintes reutilizam o cache. O limite padrão é 25 MB e pode ser alterado por `PDF_UPLOAD_MAX_MB` no `.env`.
+
+Para HTML, Markdown ou texto, coloque o arquivo em `data/documentos/`, acrescente a entrada correspondente em `data/manifesto.json` e chame `POST /admin/reindex`.
+
+Documentos digitados em Markdown, com um título `##` por seção, dão os melhores resultados. PDFs enviados pela rota administrativa sempre são convertidos pelo Docling antes da indexação.
+
+### Documentos na base
+
+| Documento | Arquivo |
 |---|---|
-| Calendário Letivo 2026.2 – São Gonçalo | PDF oficial transcrito (original em `data/originais/`) |
-| Critérios de Avaliação (Regimento Geral, arts. 78 a 81) | PDF oficial transcrito (original em `data/originais/`) |
-| Página da Universidade São Gonçalo | Sítio institucional |
-| Página do curso de Sistemas de Informação | Sítio institucional |
-| Canais de atendimento e serviços ao aluno | Sítio institucional |
+| Manual do Aluno 2026-2 (MIA) | `universo_l_mia_l_2026_2_l_03112026_2_1.md` |
+| Grade curricular de Sistemas de Informação (matriz 109AN) | `grade_curricular.md` |
+| Calendário Acadêmico EaD/semipresencial 2026.2 | `calendario_ead_2026_2.md` |
 
-### Documentos pendentes
-
-Estes documentos constam do Quadro 1 do TCC, mas não são públicos ou não estavam disponíveis. Peça-os à coordenação e adicione-os à base:
-- matriz curricular e ementas de Sistemas de Informação (use `"categoria": "matriz_curricular"` no manifesto para ativar a pergunta 26 da validação);
-- regulamentos de estágio, TCC e atividades complementares;
-- Manual Informativo do Aluno (MIA).
+Ainda falta o **calendário dos cursos presenciais**: sem ele, datas de V1, V2, VS e R1 não têm resposta. Regulamentos de estágio, TCC e atividades complementares também melhoram a cobertura.
 
 ## Estrutura do projeto
 
 ```
 app/
   config.py       configurações (.env) e parâmetros ajustáveis
+  docling_pdf.py  conversão de PDF para Markdown e JSON estruturado
+  docling_layout.py      fluxogramas, tabelas e cabeçalhos repetidos, pela posição na página
+  docling_calendario.py  calendários diagramados: cada evento no seu mês, com a data completa
+  lexico.py       busca por palavras (BM25) com sinônimos, usada na busca híbrida
+  matriz.py       respostas exatas lidas da tabela da grade curricular
   documentos.py   extração de PDF/HTML/Markdown, limpeza e seções
   indexacao.py    blocos de ~500 tokens com sobreposição de 50, embeddings e índice FAISS
   embeddings.py   multilingual-e5-base (sentence-transformers) ou Ollama
   llm.py          cliente do Ollama (API nativa) ou de API compatível com OpenAI
-  rag.py          recuperação, limiar, prompt, histórico, fontes e modo extrativo
+  rag.py          busca híbrida, esclarecimentos, prompt, verificações, citação, cache e modo extrativo
   registros.py    log de interações e avaliações
   servico.py      inicialização, reindexação e ajuste de parâmetros
   main.py         API FastAPI e interface web
 web/              interface conversacional (HTML, CSS e JavaScript)
-data/             documentos, originais em PDF e manifesto
-avaliacao/        perguntas de validação, avaliar.py e sus.py
+data/             documentos, originais em PDF, JSON do Docling e manifesto
+avaliacao/        gabaritos, validar_respostas.py, diagnostico_busca.py, avaliar.py e sus.py
 tests/            testes automatizados (pytest)
 ```
 
@@ -155,9 +230,10 @@ tests/            testes automatizados (pytest)
 | RF04 Fontes com documento e seção | `rag.py` (`montar_fontes`), `data/manifesto.json` |
 | RF05 Aviso quando não encontra a informação | `rag.py` (`MENSAGEM_NAO_ENCONTRADA`, limiar) |
 | RF06 Contexto das últimas mensagens | `rag.py` (histórico por sessão, últimas 2 trocas) |
+| RF06a Esclarecimento de perguntas ambíguas | `rag.py` (pendência por sessão e nova recuperação) |
 | RF07 Avaliação útil / não útil | `POST /feedback`, botões na interface |
 | RF08 Registro das interações | `registros.py` |
-| RF09 Atualização e reindexação da base | `POST /admin/reindex` |
+| RF09 Atualização e reindexação da base | `POST /admin/documentos`, Docling e `POST /admin/reindex` |
 | RF10 Ajuste de parâmetros | `PUT /admin/config` |
 | RNF01 Web responsiva | `web/style.css` |
 | RNF02 Resposta em menos de 5 s | medido por `avaliar.py` (`tempo_ms`) |

@@ -57,6 +57,15 @@
       </aside>
     </main>
   </div>
+  <div id="identificacao" class="sobreposicao" role="dialog" aria-modal="true" aria-labelledby="ident-titulo">
+    <form id="form-nome" class="cartao-nome" autocomplete="off">
+      <h2 id="ident-titulo">Bem-vindo ao Chatbot UNIVERSO</h2>
+      <p>Para começar, informe seu nome. Ele será registrado junto das suas perguntas.</p>
+      <label for="nome" class="oculto">Seu nome</label>
+      <input id="nome" name="nome" type="text" maxlength="80" placeholder="Seu nome" required>
+      <button type="submit">Entrar no chat</button>
+    </form>
+  </div>
   <script src="app.js"></script>
 </body>
 </html>

@@ -7,3 +7,8 @@ indice/
 registros/
 data/parametros.json
 avaliacao/resultados/
+
+# Sobras locais de testes e ambientes
+.pytest_temp_*/
+.venv_antigo/
+logs/

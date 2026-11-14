@@ -8,7 +8,14 @@ if not exist ".venv\Scripts\python.exe" (
   if errorlevel 1 goto erro
 )
 
-if not exist ".venv\.instalado" (
+set "INSTALAR_DEPENDENCIAS="
+if not exist ".venv\.instalado" set "INSTALAR_DEPENDENCIAS=1"
+if not defined INSTALAR_DEPENDENCIAS (
+  ".venv\Scripts\python.exe" -c "import docling, multipart" >nul 2>nul
+  if errorlevel 1 set "INSTALAR_DEPENDENCIAS=1"
+)
+
+if defined INSTALAR_DEPENDENCIAS (
   echo Instalando dependencias. Na primeira vez isso pode levar alguns minutos...
   ".venv\Scripts\python.exe" -m pip install --upgrade pip
   ".venv\Scripts\python.exe" -m pip install -r requirements.txt
@@ -19,7 +26,7 @@ if not exist ".venv\.instalado" (
 if not exist ".env" (
   copy ".env.example" ".env" >nul
   echo.
-  echo Arquivo .env criado. Ajuste OLLAMA_URL e ADMIN_KEY nele se necessario.
+  echo Arquivo .env criado. Ajuste OLLAMA_URL, EMAIL e PASS nele se necessario.
   echo.
 )
 

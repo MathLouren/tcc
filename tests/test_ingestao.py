@@ -63,6 +63,28 @@ def test_html_ignora_menu_scripts_e_rodape(tmp_path):
         assert indesejado not in tudo
 
 
+def test_pdf_e_convertido_por_docling_e_preserva_titulos_e_tabela(tmp_path, monkeypatch):
+    arquivo = tmp_path / "manual.pdf"
+    arquivo.write_bytes(b"%PDF-1.7\n")
+    markdown = (
+        "# Manual\n\n## Prazos\n\n"
+        "| Serviço | Data |\n| --- | --- |\n| Matrícula | 20 de agosto |\n"
+    )
+    chamadas = []
+
+    def converter(caminho):
+        chamadas.append(caminho)
+        return markdown, {"name": "manual"}
+
+    monkeypatch.setattr("app.documentos.converter_pdf_docling", converter)
+    secoes = extrair_secoes(arquivo)
+
+    assert chamadas == [arquivo]
+    assert [secao.titulo for secao in secoes] == ["Prazos"]
+    assert "Serviço | Data" in secoes[0].texto
+    assert "Matrícula | 20 de agosto" in secoes[0].texto
+
+
 def test_blocos_respeitam_tamanho_e_tem_sobreposicao():
     texto = " ".join(f"Frase número {i} com algumas palavras de teste." for i in range(40))
     blocos = dividir_em_blocos(texto, 50, 10, contar_palavras)
@@ -106,3 +128,39 @@ def test_documento_marcado_para_nao_indexar_e_ignorado(ambiente):
     ambiente.manifesto.write_text(json.dumps(manifesto, ensure_ascii=False), encoding="utf-8")
     _, info = construir_indice(ambiente, EmbedderFalso())
     assert info["n_documentos"] == 2
+
+
+def test_bloco_que_comeca_no_meio_de_um_paragrafo_herda_o_escopo():
+    from app.indexacao import contextos_dos_blocos
+
+    partes = [
+        "§ 1º Nos cursos de Graduação Presenciais serão observados os seguintes critérios: I. Média 7,0 aprova.",
+        "II. Caso MS seja inferior a 4,0, reprova.",
+        "- § 2º Nos cursos de Graduação na modalidade de Educação a Distância serão observados os critérios abaixo: I. Avaliações.",
+        "II. Se a Média Parcial for igual ou superior a 6,0, aprova.",
+        "Artigo 127 O aluno de graduação que perder uma avaliação poderá requerer a 2ª chamada.",
+    ]
+    contextos = contextos_dos_blocos(partes)
+    assert contextos[0] == ""
+    assert contextos[1].startswith("§ 1º Nos cursos de Graduação Presenciais")
+    assert contextos[2] == ""
+    assert contextos[3].startswith("§ 2º Nos cursos de Graduação na modalidade de Educação a Distância")
+    assert "Presenciais" not in contextos[3]
+
+
+def test_documento_sem_paragrafos_de_escopo_nao_ganha_contexto():
+    from app.indexacao import contextos_dos_blocos
+
+    assert contextos_dos_blocos(["Texto comum.", "Outro bloco sem parágrafos de lei."]) == ["", ""]
+
+
+def test_contexto_entra_no_prompt_mas_nao_no_embedding():
+    from app.indexacao import texto_para_embedding
+    from app.rag import MotorRAG
+    from app.config import Parametros
+
+    bloco = {"documento": "Manual", "secao": "17. Avaliação", "texto": "II. Média Parcial 6,0 aprova.",
+             "contexto": "§ 2º Nos cursos de Graduação na modalidade de Educação a Distância"}
+    assert "Educação a Distância" not in texto_para_embedding(bloco)
+    mensagens = MotorRAG(None, None, None, Parametros()).montar_mensagens("pergunta", [bloco], [])
+    assert "Continuação de: § 2º Nos cursos de Graduação na modalidade de Educação a Distância" in mensagens[0]["content"]
