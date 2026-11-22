@@ -157,7 +157,10 @@ def carregar_gabarito(caminho: str) -> tuple[list, list, list]:
 def main() -> None:
     analisador = argparse.ArgumentParser(description="Validação das respostas com o modelo real.")
     analisador.add_argument("--gabarito", help="arquivo JSON com respondiveis, sem_resposta e conversas (padrão: o deste script)")
-    analisador.add_argument("--modelo", help="modelo do Ollama (padrão: LLM_MODELO do .env)")
+    analisador.add_argument("--modelo", help="modelo de linguagem (padrão: LLM_MODELO do .env)")
+    analisador.add_argument("--reservas", help="modelos reserva separados por vírgula; vazio desliga (padrão: LLM_MODELOS_RESERVA)")
+    analisador.add_argument("--margem", type=float, help="margem_relativa do corte de trechos (padrão: parametros.json)")
+    analisador.add_argument("--reranker", help="cross-encoder dos candidatos; vazio desliga (padrão: RERANKER_MODELO)")
     analisador.add_argument("--base", help="pasta com documentos/, manifesto.json e indice/ (padrão: a do projeto)")
     analisador.add_argument("--top-k", type=int, help="trechos enviados ao modelo (padrão: parametros.json)")
     analisador.add_argument("--peso-lexical", type=float, help="peso da busca lexical; 0 = só vetorial (padrão: parametros.json)")
@@ -167,6 +170,11 @@ def main() -> None:
     config = replace(carregar_config(), registros_dir=Path(tempfile.mkdtemp(prefix="validacao_")))
     if args.modelo:
         config = replace(config, llm_modelo=args.modelo)
+    if args.reservas is not None:
+        config = replace(config, llm_modelos_reserva=tuple(m.strip() for m in args.reservas.split(",") if m.strip()))
+    if args.reranker is not None:
+        config = replace(config, reranker_modelo=args.reranker)
+    config = replace(config, cache_aquecer=0)
     if args.base:
         base = Path(args.base)
         config = replace(config, docs_dir=base / "documentos", manifesto=base / "manifesto.json", indice_dir=base / "indice")
@@ -175,6 +183,8 @@ def main() -> None:
         servico.motor.parametros = replace(servico.motor.parametros, top_k=args.top_k)
     if args.peso_lexical is not None:
         servico.motor.parametros = replace(servico.motor.parametros, peso_lexical=args.peso_lexical)
+    if args.margem is not None:
+        servico.motor.parametros = replace(servico.motor.parametros, margem_relativa=args.margem)
     if not servico.llm.disponivel():
         sys.exit(f"Modelo {config.llm_modelo} indisponível no Ollama ({config.ollama_url}).")
 
@@ -203,7 +213,8 @@ def main() -> None:
           f"(recusou {contar(resp, 'recusou')}, errou {contar(resp, 'errado')}) | "
           f"recusas corretas {contar(sem, 'certo')}/{len(sem)} | conversas {contar(conv, 'certo')}/{len(conv)} | perguntas ao aluno {sum(l['perguntou'] for l in resp)} | "
           f"tempo médio {sum(l['segundos'] for l in linhas) / len(linhas):.1f}s | "
-          f"mais lenta {max(l['segundos'] for l in linhas):.1f}s | total {time.time() - inicio:.0f}s")
+          f"mais lenta {max(l['segundos'] for l in linhas):.1f}s | total {time.time() - inicio:.0f}s | "
+          f"falhas do modelo (extrativo) {sum(1 for l in linhas if l.get('modo') == 'extrativo')}")
     for l in linhas:
         if l["tipo"] != "certo":
             print(f"  [{l['tipo']}] {l['pergunta']}\n      {l['resposta'][:300]!r}")

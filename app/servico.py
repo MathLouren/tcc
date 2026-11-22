@@ -10,7 +10,9 @@ import logging
 import re
 import shutil
 import threading
+import time
 import unicodedata
+from collections import Counter
 from dataclasses import replace
 from pathlib import Path
 
@@ -19,8 +21,9 @@ from .docling_pdf import converter_pdf_docling
 from .embeddings import criar_embedder
 from .indexacao import carregar_indice, carregar_manifesto, construir_indice
 from .llm import criar_cliente_llm
-from .rag import MotorRAG
+from .rag import MotorRAG, chave_de_cache
 from .registros import Registro
+from .reranker import criar_reranker
 
 logger = logging.getLogger(__name__)
 
@@ -40,15 +43,73 @@ class Servico:
             self.indice, self.info = construir_indice(self.config, self.embedder)
         else:
             self.indice, self.info = carregado
-        self.motor = MotorRAG(self.indice, self.embedder, self.llm, self.parametros)
+        self.motor = MotorRAG(self.indice, self.embedder, self.llm, self.parametros, criar_reranker(self.config))
 
     def aquecer_llm_em_segundo_plano(self) -> None:
-        """Carrega o modelo ao iniciar o servidor, sem atrasar a subida da API."""
+        """Carrega o modelo (e o reranker, se houver) ao iniciar o servidor, sem atrasar a subida da API."""
+        reranker = self.motor.reranker
+        if reranker is not None:
+            def carregar_reranker() -> None:
+                try:
+                    reranker.pontuar("aquecimento", ["aquecimento"])
+                except Exception:  # noqa: BLE001 - a busca segue sem reranker (ver MotorRAG._reordenar)
+                    logger.exception("Não foi possível carregar o reranker %s", reranker.modelo)
+
+            threading.Thread(target=carregar_reranker, name="aquecer-reranker", daemon=True).start()
         aquecer = getattr(self.llm, "aquecer", None)
         if aquecer is None:
             return
         sistema = self.motor.montar_mensagens("", [], [])[0]["content"]
         threading.Thread(target=aquecer, args=(sistema,), name="aquecer-llm", daemon=True).start()
+
+    # ------------------------------------------------------------ pré-aquecimento do cache
+    def perguntas_frequentes(self, limite: int) -> list[str]:
+        """As perguntas mais repetidas pelos alunos que o modelo respondeu (empate: a mais recente)."""
+        contagem: Counter = Counter()
+        ultima: dict[str, tuple[int, str]] = {}
+        for n, registro in enumerate(self.registro._ler(self.registro.arq_interacoes)):
+            pergunta = str(registro.get("pergunta") or "").strip()
+            chave = chave_de_cache(pergunta)
+            # Só perguntas que o modelo respondeu sem depender da conversa nem de esclarecimento.
+            if registro.get("modo") not in {"llm", "citacao"} or len(chave) < 8:
+                continue
+            contagem[chave] += 1
+            ultima[chave] = (n, pergunta)
+        ordem = sorted(contagem, key=lambda c: (-contagem[c], -ultima[c][0]))
+        return [ultima[c][1] for c in ordem[:limite]]
+
+    def aquecer_cache(self) -> int:
+        """Responde as perguntas frequentes para que fiquem no cache; devolve quantas foram respondidas."""
+        feitas = 0
+        for pergunta in self.perguntas_frequentes(self.config.cache_aquecer):
+            try:
+                resposta = self.motor.responder(pergunta)  # sem sessão: nada vai para os registros
+            except Exception:  # noqa: BLE001 - o aquecimento nunca derruba o servidor
+                logger.exception("Falha ao aquecer o cache com %r", pergunta)
+                continue
+            if resposta.modo == "extrativo":  # modelo fora do ar: tenta de novo na próxima mudança
+                logger.warning("Aquecimento do cache interrompido: modelo indisponível.")
+                break
+            feitas += 1
+        return feitas
+
+    def aquecer_cache_em_segundo_plano(self, intervalo: float = 60.0) -> None:
+        """Reaquece o cache sempre que ele é invalidado (subida, reindexação, parâmetros ou novo dia)."""
+        if self.config.cache_aquecer <= 0:
+            return
+
+        def laco() -> None:
+            aquecida = None
+            while True:
+                versao = self.motor.versao_do_cache()
+                if versao != aquecida:
+                    inicio = time.perf_counter()
+                    n = self.aquecer_cache()
+                    logger.info("Cache aquecido com %d perguntas frequentes em %.1f s.", n, time.perf_counter() - inicio)
+                    aquecida = versao
+                time.sleep(intervalo)
+
+        threading.Thread(target=laco, name="aquecer-cache", daemon=True).start()
 
     def reindexar(self) -> dict:
         """RF09: reprocessa a base de conhecimento sem reiniciar a aplicação."""

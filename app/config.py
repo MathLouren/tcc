@@ -59,6 +59,15 @@ class Config:
     admin_email: str = ""
     admin_pass: str = ""
     llm_num_gpu: int = -1  # camadas do modelo na GPU (Ollama); -1 = automático
+    # API OpenAI: modelos tentados, em ordem, quando o principal falha ou demora a começar a responder
+    llm_modelos_reserva: tuple[str, ...] = ()
+    llm_timeout_primeiro_token: float = 0.0  # segundos sem nenhum texto até trocar de modelo; 0 = desligado
+    llm_max_tokens: int = 700
+    # Perguntas mais frequentes dos registros respondidas ao subir e após reindexar (0 = desligado)
+    cache_aquecer: int = 0
+    # Reordenação dos candidatos por um cross-encoder (vazio = desligado)
+    reranker_modelo: str = ""
+    reranker_candidatos: int = 6
 
 
 def carregar_config() -> Config:
@@ -97,6 +106,12 @@ def carregar_config() -> Config:
         pdf_upload_max_mb=max(1, int(_env("PDF_UPLOAD_MAX_MB", "25"))),
         admin_email=_env("EMAIL", ""),
         admin_pass=os.getenv("PASS", "").strip(),
+        llm_modelos_reserva=tuple(m.strip() for m in _env("LLM_MODELOS_RESERVA", "").split(",") if m.strip()),
+        llm_timeout_primeiro_token=float(_env("LLM_TIMEOUT_PRIMEIRO_TOKEN", "0")),
+        llm_max_tokens=max(50, int(_env("LLM_MAX_TOKENS", "700"))),
+        cache_aquecer=max(0, int(_env("CACHE_AQUECER", "0"))),
+        reranker_modelo=_env("RERANKER_MODELO", ""),
+        reranker_candidatos=max(2, int(_env("RERANKER_CANDIDATOS", "6"))),
     )
 
 
@@ -149,6 +164,9 @@ class Parametros:
     prompt_sistema: str = PROMPT_PADRAO
     # Peso da busca lexical (BM25) somado à similaridade vetorial; 0 desliga a busca híbrida.
     peso_lexical: float = 0.08
+    # Corte relativo: descarta trechos com similaridade abaixo de (melhor similaridade - margem).
+    # Com o e5, até trechos sem relação ficam acima de 0,8, e o limiar absoluto quase não filtra. 0 desliga.
+    margem_relativa: float = 0.0
 
     def validar(self) -> None:
         if not 1 <= int(self.top_k) <= 20:
@@ -161,6 +179,8 @@ class Parametros:
             raise ValueError("historico_trocas deve estar entre 0 e 10.")
         if not 0.0 <= float(self.peso_lexical) <= 1.0:
             raise ValueError("peso_lexical deve estar entre 0 e 1.")
+        if not 0.0 <= float(self.margem_relativa) <= 1.0:
+            raise ValueError("margem_relativa deve estar entre 0 e 1.")
         if not str(self.prompt_sistema).strip():
             raise ValueError("prompt_sistema não pode ser vazio.")
 

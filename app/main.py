@@ -92,6 +92,7 @@ class ParametrosIn(BaseModel):
     historico_trocas: int | None = Field(default=None, ge=0, le=10)
     prompt_sistema: str | None = Field(default=None, min_length=20, max_length=4000)
     peso_lexical: float | None = Field(default=None, ge=0.0, le=1.0)
+    margem_relativa: float | None = Field(default=None, ge=0.0, le=1.0)
 
 
 def criar_app(config: Config | None = None, embedder=None, llm=None) -> FastAPI:
@@ -99,6 +100,7 @@ def criar_app(config: Config | None = None, embedder=None, llm=None) -> FastAPI:
     servico = Servico(config, embedder=embedder, llm=llm)
     if llm is None:  # cliente real: carrega o modelo já na subida (nos testes, o LLM falso é injetado)
         servico.aquecer_llm_em_segundo_plano()
+        servico.aquecer_cache_em_segundo_plano()
 
     app = FastAPI(
         title="Chatbot Institucional UNIVERSO",

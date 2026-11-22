@@ -564,7 +564,11 @@ function renderizarIndicadores(d) {
     ["Validadas como corretas", porcentagem(d.validacao.taxa_correta),
       `${plural(validadas, "validada", "validadas")} · ${plural(d.validacao.pendentes, "pendente", "pendentes")}`],
     ["Tempo mediano", d.tempo.mediano_ms === null ? "—" : formatarTempo(d.tempo.mediano_ms),
-      d.tempo.modelo_medio_ms === null ? "por pergunta" : `modelo: média de ${formatarTempo(d.tempo.modelo_medio_ms)}`],
+      [
+        d.tempo.modelo_medio_ms === null ? "por pergunta" : `modelo: média de ${formatarTempo(d.tempo.modelo_medio_ms)}`,
+        d.tempo.primeiro_token_mediano_ms == null ? "" : `1º token: ${formatarTempo(d.tempo.primeiro_token_mediano_ms)}`,
+        d.tempo.respostas_pela_reserva ? `${d.tempo.respostas_pela_reserva} pela reserva` : "",
+      ].filter(Boolean).join(" · ")],
   ];
   $("#painel-kpis").replaceChildren(...indicadores.map(([rotulo, valor, nota]) => {
     const cartao = criar("div", "kpi");

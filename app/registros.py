@@ -1,7 +1,7 @@
 """Registro das interações, avaliações dos alunos e validações da equipe em JSON Lines (RF07 e RF08).
 
 Arquivos gerados em registros/:
-- interacoes.jsonl: pergunta, trechos recuperados, resposta, modo e tempo de processamento;
+- interacoes.jsonl: pergunta, trechos recuperados, resposta, modo, tempo de processamento e métricas do LLM;
 - avaliacoes.jsonl: avaliação do aluno (útil / não útil) para cada interação;
 - revisoes.jsonl: validação da resposta pela secretaria ou coordenação (correta, parcial ou incorreta).
 O aluno informa apenas o nome antes de conversar; ele é gravado junto de cada interação.
@@ -90,6 +90,7 @@ class Registro:
             "modo": resposta.modo,
             "tempo_ms": resposta.tempo_ms,
             "trechos": resposta.trechos,
+            **({"metricas": resposta.metricas} if getattr(resposta, "metricas", None) else {}),
         })
         self._ids.add(interacao_id)
         return interacao_id

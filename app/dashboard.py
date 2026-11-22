@@ -92,6 +92,8 @@ def montar_dashboard(interacoes: list[dict], avaliacoes: dict[str, dict], reviso
     # ---------------------------------------------------------------- tempos
     tempos = [int(r.get("tempo_ms") or 0) for _, r in perguntas]
     tempos_modelo = [int(r.get("tempo_ms") or 0) for _, r in perguntas if r.get("modo") in {"llm", "citacao"}]
+    metricas = [r.get("metricas") or {} for _, r in perguntas]
+    primeiros_tokens = [int(m["primeiro_token_ms"]) for m in metricas if m.get("primeiro_token_ms") is not None]
 
     # ---------------------------------------------------------------- séries por dia e por hora
     por_dia: dict[str, dict] = {}
@@ -183,6 +185,10 @@ def montar_dashboard(interacoes: list[dict], avaliacoes: dict[str, dict], reviso
             "medio_ms": round(statistics.mean(tempos)) if tempos else None,
             "modelo_medio_ms": round(statistics.mean(tempos_modelo)) if tempos_modelo else None,
             "modelo_p95_ms": _percentil(tempos_modelo, 0.95),
+            # Com streaming, é o tempo até o aluno começar a ver a resposta.
+            "primeiro_token_mediano_ms": int(statistics.median(primeiros_tokens)) if primeiros_tokens else None,
+            "respostas_pela_reserva": sum(1 for m in metricas if m.get("reserva")),
+            "respostas_do_cache": sum(1 for m in metricas if m.get("cache")),
         },
         "por_dia": list(por_dia.values()),
         "por_hora": por_hora,

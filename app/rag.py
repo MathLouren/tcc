@@ -218,6 +218,27 @@ class Resposta:
     modo: str  # "llm", "validado", "extrativo", "esclarecimento", "sem_resultado" ou "conversa"
     trechos: list[dict]
     tempo_ms: int
+    # Chamadas ao LLM desta resposta: quantidade, tempo, modelo, provedor, 1º token e uso da reserva.
+    metricas: dict = field(default_factory=dict)
+
+
+def resumir_metricas(chamadas: list[dict], modo: str) -> dict:
+    """Resumo das chamadas ao LLM gravado no registro da interação (alimenta o painel de desempenho)."""
+    if not chamadas:
+        return {"chamadas_llm": 0, "cache": True} if modo in {"llm", "citacao"} else {}
+    ok = [c for c in chamadas if not c.get("erro")]
+    ultima = ok[-1] if ok else chamadas[-1]
+    resumo = {
+        "chamadas_llm": len(chamadas),
+        "tempo_llm_ms": sum(int(c.get("tempo_ms") or 0) for c in chamadas),
+        "modelo": ultima.get("modelo"),
+        "falhas_llm": len(chamadas) - len(ok),
+        "reserva": any(c.get("reserva") for c in ok),
+    }
+    for chave in ("provedor", "primeiro_token_ms"):
+        if ok and ok[0].get(chave) is not None:
+            resumo[chave] = ok[0][chave]
+    return resumo
 
 
 @dataclass
@@ -286,7 +307,7 @@ def _resposta_social(pergunta: str) -> str | None:
     return None
 
 
-def _chave_de_cache(texto: str) -> str:
+def chave_de_cache(texto: str) -> str:
     return " ".join(re.sub(r"[^\w\s]", " ", _normalizar(texto)).split())
 
 
@@ -808,11 +829,12 @@ class MotorRAG:
     MAX_SESSOES = 1000
     MAX_TROCAS_GUARDADAS = 10
 
-    def __init__(self, indice, embedder, llm, parametros: Parametros):
+    def __init__(self, indice, embedder, llm, parametros: Parametros, reranker=None):
         self.indice = indice
         self.embedder = embedder
         self.llm = llm
         self.parametros = parametros
+        self.reranker = reranker  # opcional: reordena os candidatos antes do corte em top_k
         self._sessoes: OrderedDict[str, deque] = OrderedDict()
         self._esclarecimentos: OrderedDict[str, EsclarecimentoPendente] = OrderedDict()
         self._lock = threading.Lock()
@@ -821,9 +843,13 @@ class MotorRAG:
         self._versao_do_cache: tuple = ()
 
     # ------------------------------------------------------------ cache de respostas
+    def versao_do_cache(self) -> tuple:
+        """Muda quando mudam os documentos, os parâmetros, o modelo ou o dia (o prompt cita a data de hoje)."""
+        return (id(self.indice), repr(self.parametros), getattr(self.llm, "modelo", ""), date.today())
+
     def _cache_valido(self) -> None:
-        """Esvazia o cache quando mudam os documentos, os parâmetros ou o dia (o prompt cita a data de hoje)."""
-        versao = (id(self.indice), repr(self.parametros), getattr(self.llm, "modelo", ""), date.today())
+        """Esvazia o cache quando a versão muda (ver versao_do_cache)."""
+        versao = self.versao_do_cache()
         if versao != self._versao_do_cache:
             self._cache.clear()
             self._versao_do_cache = versao
@@ -845,7 +871,7 @@ class MotorRAG:
 
     def esquecer_resposta(self, pergunta: str) -> None:
         """Tira do cache as respostas dessa pergunta (usado quando o aluno marca "não útil")."""
-        alvo = _chave_de_cache(pergunta)
+        alvo = chave_de_cache(pergunta)
         with self._lock:
             for chave in [c for c in self._cache if alvo and alvo in c]:
                 del self._cache[chave]
@@ -880,13 +906,17 @@ class MotorRAG:
         # Regras de presencial e EaD têm textos quase iguais; o escopo do bloco desempata a busca.
         modalidade = None if siglas else _modalidade_do_texto(_normalizar(consulta))
 
+        margem = float(getattr(p, "margem_relativa", 0.0))
+        melhor = max((sim for _, sim in resultados), default=0.0)
+        piso = max(p.limiar, melhor - margem) if margem > 0 else p.limiar
+
         candidatos: list[tuple[int, float]] = []
         for i, similaridade in resultados:
             bloco = indice.blocos[i]
             if siglas:
                 if not _contem_siglas(bloco, siglas):
                     continue
-            elif similaridade < p.limiar:
+            elif similaridade < piso:
                 continue
             nota = similaridade
             if maximo > 0:
@@ -895,10 +925,26 @@ class MotorRAG:
                 nota += _ajuste_de_modalidade(bloco, modalidade)
             candidatos.append((i, nota))
         candidatos.sort(key=lambda par: -par[1])
+        if self.reranker is not None and not siglas and len(candidatos) > 1:
+            candidatos = self._reordenar(consulta, candidatos[:self.reranker.candidatos], modalidade)
         return [
             dict(indice.blocos[i], similaridade=round(min(s, 1.0), 4))
             for i, s in candidatos[:p.top_k]
         ]
+
+    def _reordenar(self, consulta: str, candidatos: list[tuple[int, float]], modalidade) -> list[tuple[int, float]]:
+        """Ordena pelo cross-encoder; a similaridade exibida continua a da busca."""
+        blocos = self.indice.blocos
+        textos = [f"{blocos[i]['secao']}\n{blocos[i].get('contexto') or ''}\n{blocos[i]['texto']}" for i, _ in candidatos]
+        try:
+            notas = self.reranker.pontuar(consulta, textos)
+        except Exception:  # noqa: BLE001 - sem reranker, vale a ordem da busca híbrida
+            logger.exception("Falha no reranker; usando a ordem da busca")
+            return candidatos
+        if modalidade:  # o desempate por presencial/EaD continua valendo
+            notas = [n + 10 * _ajuste_de_modalidade(blocos[i], modalidade) for n, (i, _) in zip(notas, candidatos)]
+        ordem = sorted(range(len(candidatos)), key=lambda k: -notas[k])
+        return [candidatos[k] for k in ordem]
 
     def _resposta_factual_da_matriz(self, pergunta: str) -> tuple[str, list[dict]] | None:
         # "SI" só é expandido quando o aluno o usa como nome de curso.
@@ -1403,6 +1449,16 @@ class MotorRAG:
         return texto, "llm", trechos
 
     def responder(self, pergunta: str, sessao_id: str | None = None, ao_token=None) -> Resposta:
+        """Responde e anexa as métricas das chamadas ao LLM feitas para esta pergunta."""
+        iniciar = getattr(self.llm, "iniciar_metricas", None)
+        if iniciar:
+            iniciar()
+        resposta = self._responder(pergunta, sessao_id, ao_token)
+        consumir = getattr(self.llm, "consumir_metricas", None)
+        resposta.metricas = resumir_metricas(consumir() if consumir else [], resposta.modo)
+        return resposta
+
+    def _responder(self, pergunta: str, sessao_id: str | None = None, ao_token=None) -> Resposta:
         """ao_token(texto), se informado, recebe a resposta do modelo enquanto ela é gerada.
 
         O texto parcial é provisório: a Resposta devolvida é a definitiva (as verificações
@@ -1497,7 +1553,7 @@ class MotorRAG:
             texto = _padronizar_recusa("Não localizei", pergunta) or MENSAGEM_NAO_ENCONTRADA
             modo, trechos = "sem_resultado", []
         else:
-            chave = None if historico else _chave_de_cache(f"{consulta} | {pergunta_modelo}")
+            chave = None if historico else chave_de_cache(f"{consulta} | {pergunta_modelo}")
             guardado = self._ler_cache(chave) if chave else None
             if guardado:
                 texto, modo, trechos = guardado

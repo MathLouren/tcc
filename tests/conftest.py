@@ -143,6 +143,10 @@ def ambiente(tmp_path):
         admin_pass="senha-teste",
         chunk_tokens=120,
         chunk_sobreposicao=20,
+        # Os testes não dependem do .env da máquina: nada de reranker, reservas ou aquecimento real.
+        reranker_modelo="",
+        llm_modelos_reserva=(),
+        cache_aquecer=0,
     )
     # O embedder falso gera similaridades menores que o modelo real; o limiar é ajustado para ele.
     Parametros(limiar=0.15).salvar(config.parametros_arquivo)

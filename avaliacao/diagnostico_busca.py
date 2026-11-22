@@ -4,8 +4,12 @@ Uso, na pasta do projeto e com o ambiente virtual ativo:
     python avaliacao/diagnostico_busca.py                 # índice do projeto
     python avaliacao/diagnostico_busca.py --indice PASTA  # índice de teste
 
+    python avaliacao/diagnostico_busca.py --termos --construir --minimo 115   # usado no CI
+
 Útil para separar erro de busca (o trecho certo não chega ao modelo) de erro de leitura do modelo.
 Rápido: não chama o Ollama. Os textos do gabarito precisam existir literalmente nos documentos.
+--construir indexa os documentos numa pasta temporária (o índice do projeto não é alterado) e
+--minimo faz o comando terminar com erro se os termos esperados aparecerem em menos perguntas.
 """
 from __future__ import annotations
 
@@ -21,6 +25,7 @@ from app.config import Parametros, carregar_config  # noqa: E402
 from app.embeddings import criar_embedder  # noqa: E402
 from app.indexacao import carregar_indice  # noqa: E402
 from app.rag import MotorRAG, _modalidade_ambigua  # noqa: E402
+from app.reranker import criar_reranker  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
@@ -56,7 +61,7 @@ GABARITO = [
 ]
 
 
-def medir_termos(motor) -> None:
+def medir_termos(motor) -> int:
     """Condição necessária para acertar: os termos esperados precisam estar nos trechos enviados ao modelo.
 
     Perguntas respondidas pelo código (grade) ou que pedem esclarecimento ficam de fora da conta.
@@ -87,10 +92,12 @@ def medir_termos(motor) -> None:
             achados += 1
         else:
             faltas.append((pergunta, [b["secao"][:26] for b in usados]))
-    print(f"{len(motor.indice.blocos)} blocos | top_k={motor.parametros.top_k} peso_lexical={motor.parametros.peso_lexical} | "
+    print(f"{len(motor.indice.blocos)} blocos | top_k={motor.parametros.top_k} peso_lexical={motor.parametros.peso_lexical} "
+          f"margem={motor.parametros.margem_relativa} reranker={motor.reranker.modelo if motor.reranker else '-'} | "
           f"termos esperados presentes nos trechos: {achados} de {total} | média de {tokens // max(total, 1)} tokens de trechos")
     for pergunta, secoes in faltas:
         print(f"  -- {pergunta} | {secoes}")
+    return achados
 
 
 def main() -> None:
@@ -101,11 +108,23 @@ def main() -> None:
                                  "trechos enviados ao modelo contêm os termos esperados na resposta")
     analisador.add_argument("--top-k", type=int, help="trechos enviados ao modelo (padrão: parametros.json)")
     analisador.add_argument("--peso-lexical", type=float, help="peso da busca lexical (padrão: parametros.json)")
+    analisador.add_argument("--margem", type=float, help="margem_relativa do corte de trechos (padrão: parametros.json)")
+    analisador.add_argument("--reranker", help="modelo cross-encoder para reordenar os candidatos (padrão: RERANKER_MODELO)")
+    analisador.add_argument("--construir", action="store_true", help="indexa os documentos numa pasta temporária antes de medir")
+    analisador.add_argument("--minimo", type=int, help="com --termos: erro se os termos aparecerem em menos perguntas que isso")
     args = analisador.parse_args()
 
     config = carregar_config()
     if args.indice:
         config = replace(config, indice_dir=Path(args.indice))
+    if args.construir:
+        import tempfile
+
+        from app.indexacao import construir_indice, salvar_indice
+
+        config = replace(config, indice_dir=Path(tempfile.mkdtemp(prefix="indice_")))
+        indice, info = construir_indice(config, criar_embedder(config))
+        salvar_indice(config.indice_dir, indice, info)
     carregado = carregar_indice(config)
     if carregado is None:
         sys.exit(f"Índice não encontrado ou gerado com outro modelo de embeddings em {config.indice_dir}.")
@@ -116,9 +135,15 @@ def main() -> None:
         parametros = replace(parametros, top_k=args.top_k)
     if args.peso_lexical is not None:
         parametros = replace(parametros, peso_lexical=args.peso_lexical)
-    motor = MotorRAG(indice, embedder, None, parametros)
+    if args.margem is not None:
+        parametros = replace(parametros, margem_relativa=args.margem)
+    if args.reranker is not None:
+        config = replace(config, reranker_modelo=args.reranker)
+    motor = MotorRAG(indice, embedder, None, parametros, criar_reranker(config))
     if args.termos:
-        medir_termos(motor)
+        achados = medir_termos(motor)
+        if args.minimo is not None and achados < args.minimo:
+            sys.exit(f"FALHA: termos esperados em {achados} perguntas; o mínimo é {args.minimo}.")
         return
 
     ausentes = [t for _, t in GABARITO if not any(t in b["texto"] for b in indice.blocos)]
