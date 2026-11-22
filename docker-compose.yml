@@ -5,6 +5,8 @@
 #   docker compose logs -f           acompanha o servidor
 #   docker compose down              para o chatbot, mantendo os dados
 #   docker compose down -v           para e APAGA os dados (documentos enviados, índice e registros)
+name: chatbot-universo  # fixa os volumes (chatbot-universo_dados etc.), seja qual for o nome da pasta
+
 services:
   chatbot:
     build: .
