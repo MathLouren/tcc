@@ -1226,8 +1226,13 @@ class MotorRAG:
                   if t.upper() in _SIGLAS_ACADEMICAS and (t.isupper() or t.lower() != "as")}
         if not siglas:
             return ""
-        # o assunto da pergunta, sem as siglas: é ele que a frase de restrição precisa cobrir
-        consulta = re.sub(rf"\b(?:{'|'.join(siglas)})\b", " ", pergunta, flags=re.IGNORECASE)
+        # O assunto da pergunta, sem as siglas e sem o nome delas por extenso: é ele que a frase de
+        # restrição precisa cobrir. Sem tirar o nome, "quando faço a Verificação Suplementar (VS)?"
+        # cobria "Não haverá 2ª chamada para a Verificação Suplementar" só por repetir o nome da prova.
+        consulta = re.sub(rf"\b(?:{'|'.join(siglas)})\b", " ", _normalizar(pergunta), flags=re.IGNORECASE)
+        for sigla in siglas:
+            if sigla in glossario:
+                consulta = consulta.replace(_normalizar(glossario[sigla]), " ")
         candidatas: dict[str, float] = {}
         for trecho in trechos:
             for linha in str(trecho.get("texto", "")).split("\n"):

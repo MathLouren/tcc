@@ -508,3 +508,10 @@ def test_restricao_nao_e_destacada_quando_a_pergunta_e_sobre_outro_assunto_da_av
     servico, llm = _servico_com(ambiente, MANUAL_SEGUNDA_CHAMADA)
     servico.motor.responder("quem pode fazer a R1?")
     assert "Restrição nos trechos" not in _pergunta_enviada(llm)
+
+
+def test_nome_da_avaliacao_por_extenso_nao_conta_como_assunto_da_restricao(ambiente):
+    """"Quando faço a Verificação Suplementar (VS)?" não é sobre 2ª chamada, mesmo repetindo o nome da VS."""
+    servico, llm = _servico_com(ambiente, MANUAL_SEGUNDA_CHAMADA)
+    servico.motor.responder("quando o aluno precisa fazer a Verificação Suplementar (VS)?")
+    assert "Restrição nos trechos" not in _pergunta_enviada(llm)
