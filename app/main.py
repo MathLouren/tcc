@@ -35,6 +35,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from .config import Config
+from .dashboard import montar_dashboard
 from .docling_pdf import ErroConversaoPDF
 from .servico import Servico
 
@@ -75,6 +76,13 @@ class AvaliacaoIn(BaseModel):
 
 class BuscaIn(BaseModel):
     pergunta: str = Field(..., min_length=1, max_length=1000)
+
+
+class RevisaoIn(BaseModel):
+    interacao_id: str = Field(..., min_length=1, max_length=64)
+    veredito: str = Field(..., pattern="^(correta|parcial|incorreta)$")
+    revisor: str | None = Field(default=None, max_length=80)
+    comentario: str | None = Field(default=None, max_length=1000)
 
 
 class ParametrosIn(BaseModel):
@@ -358,6 +366,26 @@ def criar_app(config: Config | None = None, embedder=None, llm=None) -> FastAPI:
     @app.get("/admin/logs", dependencies=[Depends(exigir_admin)])
     def logs(limite: int = Query(default=100, ge=1, le=5000)):
         return servico.registro.resumo(limite)
+
+    @app.get("/admin/dashboard", dependencies=[Depends(exigir_admin)])
+    def dashboard(periodo: str = Query(default="30d", pattern="^(hoje|7d|30d|90d|tudo)$")):
+        interacoes, avaliacoes, revisoes = servico.registro.dados()
+        dados = montar_dashboard(interacoes, avaliacoes, revisoes, periodo)
+        dados["modelo"] = {
+            "api": servico.config.llm_api,
+            "nome": servico.config.llm_modelo,
+            "disponivel": servico.llm.disponivel(),
+        }
+        return dados
+
+    @app.post("/admin/revisoes", dependencies=[Depends(exigir_admin)])
+    def validar_resposta(dados: RevisaoIn):
+        """Validação humana de uma resposta (secretaria ou coordenação): correta, parcial ou incorreta."""
+        revisor = " ".join((dados.revisor or "").split()) or servico.config.admin_email or "Administrador"
+        revisao = servico.registro.registrar_revisao(dados.interacao_id, dados.veredito, revisor, dados.comentario)
+        if revisao is None:
+            raise HTTPException(404, "Interação não encontrada.")
+        return {"ok": True, "revisao": revisao}
 
     @app.get("/admin/config", dependencies=[Depends(exigir_admin)])
     def obter_config():

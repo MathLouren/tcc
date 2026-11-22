@@ -34,6 +34,9 @@
         <span class="marca-texto"><strong>Administração</strong><small>Chatbot UNIVERSO</small></span>
       </div>
       <nav class="nav" aria-label="Seções do painel">
+        <a class="nav-item" href="#painel" data-secao="painel">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M21 20H3"/></svg>Painel
+        </a>
         <a class="nav-item" href="#logs" data-secao="logs">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H8l-4 4z"/></svg>Conversas
         </a>
@@ -51,8 +54,130 @@
     </aside>
 
     <main class="conteudo">
+      <!-- Painel -->
+      <section id="secao-painel" aria-labelledby="titulo-painel">
+        <header class="cabecalho">
+          <div>
+            <h1 id="titulo-painel">Painel</h1>
+            <p id="painel-atualizado" class="subtitulo">Desempenho e qualidade das respostas do chatbot.</p>
+          </div>
+          <button id="atualizar-painel" class="btn" type="button">Atualizar</button>
+        </header>
+
+        <div class="barra-periodo" role="radiogroup" aria-label="Período">
+          <button class="periodo" type="button" role="radio" data-periodo="hoje">Hoje</button>
+          <button class="periodo" type="button" role="radio" data-periodo="7d">7 dias</button>
+          <button class="periodo" type="button" role="radio" data-periodo="30d">30 dias</button>
+          <button class="periodo" type="button" role="radio" data-periodo="90d">90 dias</button>
+          <button class="periodo" type="button" role="radio" data-periodo="tudo">Tudo</button>
+        </div>
+
+        <div id="painel-conteudo" class="painel-conteudo">
+          <div id="status-modelo" class="status-modelo" role="status"></div>
+          <div id="painel-kpis" class="kpis"></div>
+
+          <article class="cartao cartao-grafico">
+            <header class="cartao-topo">
+              <div>
+                <h2>Perguntas por dia</h2>
+                <p class="subtitulo">Desfecho de cada pergunta. Saudações e pedidos de esclarecimento não entram.</p>
+              </div>
+              <button class="btn btn-pequeno alternar-tabela" type="button" data-alvo="grafico-dias">Ver tabela</button>
+            </header>
+            <div id="legenda-dias" class="legenda"></div>
+            <div id="grafico-dias" class="grafico"></div>
+          </article>
+
+          <div class="grade-2">
+            <article class="cartao cartao-grafico">
+              <header class="cartao-topo">
+                <div>
+                  <h2>Horário das perguntas</h2>
+                  <p class="subtitulo">Perguntas por hora do dia, no horário de Brasília.</p>
+                </div>
+                <button class="btn btn-pequeno alternar-tabela" type="button" data-alvo="grafico-horas">Ver tabela</button>
+              </header>
+              <div id="grafico-horas" class="grafico"></div>
+            </article>
+            <article class="cartao cartao-grafico">
+              <header class="cartao-topo">
+                <div>
+                  <h2>Como as respostas foram produzidas</h2>
+                  <p class="subtitulo">Interações por tipo de resposta no período.</p>
+                </div>
+              </header>
+              <div id="grafico-modos" class="lista-medidores"></div>
+            </article>
+          </div>
+
+          <div class="grade-2">
+            <article class="cartao">
+              <header class="cartao-topo">
+                <div>
+                  <h2>Avaliação dos alunos</h2>
+                  <p class="subtitulo">Botões "Esta resposta foi útil?" do chat.</p>
+                </div>
+              </header>
+              <div id="medidores-alunos" class="lista-medidores"></div>
+            </article>
+            <article class="cartao">
+              <header class="cartao-topo">
+                <div>
+                  <h2>Validação da equipe</h2>
+                  <p class="subtitulo">Respostas conferidas pela secretaria ou coordenação.</p>
+                </div>
+              </header>
+              <div id="medidores-validacao" class="lista-medidores"></div>
+            </article>
+          </div>
+
+          <article class="cartao">
+            <header class="cartao-topo">
+              <div>
+                <h2>Respostas para validar</h2>
+                <p class="subtitulo">Primeiro as reprovadas pelos alunos, depois as sem resposta. Clique para abrir e validar.</p>
+              </div>
+            </header>
+            <div class="tabela-caixa tabela-interna">
+              <table class="tabela">
+                <thead>
+                  <tr>
+                    <th scope="col" class="col-data">Data e hora</th>
+                    <th scope="col">Pergunta</th>
+                    <th scope="col" class="col-motivo">Motivo</th>
+                  </tr>
+                </thead>
+                <tbody id="revisar-corpo"></tbody>
+              </table>
+            </div>
+          </article>
+
+          <article class="cartao">
+            <header class="cartao-topo">
+              <div>
+                <h2>Perguntas sem resposta mais repetidas</h2>
+                <p class="subtitulo">Indicam documentos que faltam na base.</p>
+              </div>
+            </header>
+            <div class="tabela-caixa tabela-interna">
+              <table class="tabela">
+                <thead>
+                  <tr>
+                    <th scope="col">Pergunta</th>
+                    <th scope="col" class="num">Vezes</th>
+                    <th scope="col" class="col-data">Última vez</th>
+                  </tr>
+                </thead>
+                <tbody id="sem-resposta-corpo"></tbody>
+              </table>
+            </div>
+          </article>
+        </div>
+        <div id="dica" class="dica" role="tooltip" hidden></div>
+      </section>
+
       <!-- Conversas -->
-      <section id="secao-logs" aria-labelledby="titulo-logs">
+      <section id="secao-logs" aria-labelledby="titulo-logs" hidden>
         <header class="cabecalho">
           <div>
             <h1 id="titulo-logs">Conversas</h1>
@@ -70,12 +195,21 @@
           <label class="campo">Tipo de resposta
             <select id="filtro-modo"><option value="">Todos</option></select>
           </label>
-          <label class="campo">Avaliação
+          <label class="campo">Avaliação do aluno
             <select id="filtro-avaliacao">
               <option value="">Todas</option>
               <option value="util">Útil</option>
               <option value="nao_util">Não útil</option>
               <option value="sem">Sem avaliação</option>
+            </select>
+          </label>
+          <label class="campo">Validação
+            <select id="filtro-validacao">
+              <option value="">Todas</option>
+              <option value="pendente">Pendente</option>
+              <option value="correta">Correta</option>
+              <option value="parcial">Parcial</option>
+              <option value="incorreta">Incorreta</option>
             </select>
           </label>
         </div>
@@ -90,7 +224,8 @@
                 <th scope="col" class="col-nome">Aluno</th>
                 <th scope="col">Pergunta</th>
                 <th scope="col" class="col-modo">Tipo</th>
-                <th scope="col" class="col-avaliacao">Avaliação</th>
+                <th scope="col" class="col-avaliacao">Aluno avaliou</th>
+                <th scope="col" class="col-avaliacao">Validação</th>
                 <th scope="col" class="col-tempo num">Tempo</th>
               </tr>
             </thead>

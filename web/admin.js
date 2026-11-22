@@ -14,11 +14,28 @@ const MODOS = {
   sem_resultado: { rotulo: "Sem resultado", classe: "selo-vermelho" },
 };
 
+const VEREDITOS = {
+  correta: { rotulo: "Correta", classe: "selo-verde" },
+  parcial: { rotulo: "Parcial", classe: "selo-ambar" },
+  incorreta: { rotulo: "Incorreta", classe: "selo-vermelho" },
+};
+
+function lerPreferencia(chave, padrao) {
+  try { return window.localStorage.getItem(chave) || padrao; } catch { return padrao; }
+}
+
+function gravarPreferencia(chave, valor) {
+  try { window.localStorage.setItem(chave, valor); } catch { /* navegador sem armazenamento */ }
+}
+
 const estado = {
   interacoes: [],
   documentos: [],
   pagina: 1,
   documentoEmRemocao: null,
+  periodo: lerPreferencia("painel-periodo", "30d"),
+  painel: null,
+  temporizador: null,
 };
 
 // ---------------------------------------------------------------- utilitários
@@ -74,6 +91,16 @@ function seloModo(modo) {
 function seloAvaliacao(avaliacao) {
   if (!avaliacao) return criar("span", "traco", "—");
   return avaliacao.util ? selo("Útil", "selo-verde") : selo("Não útil", "selo-vermelho");
+}
+
+// Saudações e pedidos de esclarecimento não são respostas a validar.
+const SEM_VALIDACAO = ["conversa", "esclarecimento"];
+
+function seloValidacao(revisao, modo) {
+  if (!revisao && SEM_VALIDACAO.includes(modo)) return criar("span", "traco", "—");
+  if (!revisao) return selo("Pendente");
+  const info = VEREDITOS[revisao.veredito] || { rotulo: revisao.veredito, classe: "" };
+  return selo(info.rotulo, info.classe);
 }
 
 function avisar(texto, erro = false) {
@@ -140,14 +167,22 @@ function mostrarPainel(email) {
   $("#painel").hidden = false;
   $("#usuario").textContent = email || "";
   aplicarSecao();
+  carregarPainel();
   carregarLogs();
   carregarDocumentos();
 }
 
+const SECOES = ["painel", "logs", "documentos"];
+
+function secaoAtual() {
+  const alvo = window.location.hash.replace("#", "");
+  return SECOES.includes(alvo) ? alvo : "painel";
+}
+
 function aplicarSecao() {
-  const atual = window.location.hash === "#documentos" ? "documentos" : "logs";
-  $("#secao-logs").hidden = atual !== "logs";
-  $("#secao-documentos").hidden = atual !== "documentos";
+  const atual = secaoAtual();
+  SECOES.forEach((secao) => { $(`#secao-${secao}`).hidden = secao !== atual; });
+  if (atual === "painel" && estado.painel) desenharGraficos();
   document.querySelectorAll(".nav-item").forEach((item) => {
     if (item.dataset.secao === atual) item.setAttribute("aria-current", "page");
     else item.removeAttribute("aria-current");
@@ -200,7 +235,10 @@ function filtrarInteracoes() {
   const termo = normalizar($("#filtro-texto").value.trim());
   const modo = $("#filtro-modo").value;
   const avaliacao = $("#filtro-avaliacao").value;
+  const validacao = $("#filtro-validacao").value;
   return estado.interacoes.filter((r) => {
+    if (validacao === "pendente" && (r.revisao || SEM_VALIDACAO.includes(r.modo))) return false;
+    if (validacao && validacao !== "pendente" && !(r.revisao && r.revisao.veredito === validacao)) return false;
     if (modo && r.modo !== modo) return false;
     if (avaliacao === "util" && !(r.avaliacao && r.avaliacao.util)) return false;
     if (avaliacao === "nao_util" && !(r.avaliacao && !r.avaliacao.util)) return false;
@@ -213,6 +251,7 @@ function limparFiltros() {
   $("#filtro-texto").value = "";
   $("#filtro-modo").value = "";
   $("#filtro-avaliacao").value = "";
+  $("#filtro-validacao").value = "";
   estado.pagina = 1;
   renderizarLogs();
 }
@@ -245,6 +284,10 @@ function linhaInteracao(registro) {
   avaliacao.appendChild(seloAvaliacao(registro.avaliacao));
   tr.appendChild(avaliacao);
 
+  const validacao = criar("td", "col-avaliacao");
+  validacao.appendChild(seloValidacao(registro.revisao, registro.modo));
+  tr.appendChild(validacao);
+
   tr.appendChild(criar("td", "col-tempo num", formatarTempo(registro.tempo_ms)));
   tr.addEventListener("click", () => abrirDetalhe(registro));
   return tr;
@@ -257,9 +300,9 @@ function renderizarLogs() {
   estado.pagina = Math.min(estado.pagina, totalPaginas);
 
   if (!estado.interacoes.length) {
-    linhaEstado(corpo, 6, "Ainda não há conversas registradas.");
+    linhaEstado(corpo, 7, "Ainda não há conversas registradas.");
   } else if (!itens.length) {
-    linhaEstado(corpo, 6, "Nenhuma conversa corresponde aos filtros.", {
+    linhaEstado(corpo, 7, "Nenhuma conversa corresponde aos filtros.", {
       rotulo: "Limpar filtros",
       executar: limparFiltros,
     });
@@ -282,7 +325,7 @@ function renderizarLogs() {
 async function carregarLogs() {
   const botao = $("#atualizar-logs");
   botao.disabled = true;
-  if (!estado.interacoes.length) linhaEstado($("#logs-corpo"), 6, "Carregando conversas…");
+  if (!estado.interacoes.length) linhaEstado($("#logs-corpo"), 7, "Carregando conversas…");
   try {
     const dados = await api(`/admin/logs?limite=${LIMITE_LOGS}`);
     estado.interacoes = dados.interacoes || [];
@@ -294,7 +337,7 @@ async function carregarLogs() {
     }
   } catch (erro) {
     if (tratarSessao(erro)) return;
-    linhaEstado($("#logs-corpo"), 6, erro.message, { rotulo: "Tentar novamente", executar: carregarLogs });
+    linhaEstado($("#logs-corpo"), 7, erro.message, { rotulo: "Tentar novamente", executar: carregarLogs });
   } finally {
     botao.disabled = false;
   }
@@ -314,6 +357,7 @@ function abrirDetalhe(registro) {
   const selos = criar("div", "detalhe-selos");
   selos.appendChild(seloModo(registro.modo));
   if (registro.avaliacao) selos.appendChild(seloAvaliacao(registro.avaliacao));
+  if (registro.revisao || !SEM_VALIDACAO.includes(registro.modo)) selos.appendChild(seloValidacao(registro.revisao));
   selos.appendChild(selo(formatarTempo(registro.tempo_ms)));
 
   const partes = [
@@ -346,10 +390,482 @@ function abrirDetalhe(registro) {
     partes.push(bloco("Trechos recuperados", lista));
   }
 
+  partes.push(bloco("Validação da equipe", formularioValidacao(registro)));
   if (registro.sessao_id) partes.push(criar("p", "sessao", `Sessão ${registro.sessao_id}`));
   $("#detalhe-conteudo").replaceChildren(...partes);
   $("#detalhe").showModal();
   $("#detalhe").scrollTop = 0;
+}
+
+// ---------------------------------------------------------------- validação humana
+function formularioValidacao(registro) {
+  const caixa = criar("div", "validacao");
+  if (registro.revisao) {
+    const atual = criar("p", "validacao-atual");
+    atual.append(seloValidacao(registro.revisao), document.createTextNode(
+      ` por ${registro.revisao.revisor || "equipe"} em ${formatarDataHora(registro.revisao.data_hora)}`));
+    caixa.appendChild(atual);
+    if (registro.revisao.comentario) caixa.appendChild(criar("p", "bloco-texto validacao-comentario", registro.revisao.comentario));
+  } else if (SEM_VALIDACAO.includes(registro.modo)) {
+    caixa.appendChild(criar("p", "subtitulo", "Saudações e pedidos de esclarecimento não precisam de validação."));
+  }
+
+  const opcoes = criar("div", "opcoes-veredito");
+  opcoes.setAttribute("role", "radiogroup");
+  opcoes.setAttribute("aria-label", "A resposta está");
+  let escolhido = registro.revisao ? registro.revisao.veredito : "";
+  const salvar = criar("button", "btn btn-primario", registro.revisao ? "Atualizar validação" : "Salvar validação");
+  salvar.type = "button";
+  salvar.disabled = !escolhido;
+  const botoes = Object.entries(VEREDITOS).map(([valor, info]) => {
+    const botao = criar("button", `btn opcao-veredito opcao-${valor}`, info.rotulo);
+    botao.type = "button";
+    botao.setAttribute("role", "radio");
+    botao.setAttribute("aria-checked", String(valor === escolhido));
+    botao.addEventListener("click", () => {
+      escolhido = valor;
+      botoes.forEach((b) => b.setAttribute("aria-checked", String(b === botao)));
+      salvar.disabled = false;
+    });
+    return botao;
+  });
+  opcoes.append(...botoes);
+
+  const comentario = criar("textarea");
+  comentario.rows = 2;
+  comentario.maxLength = 1000;
+  comentario.placeholder = "O que está errado ou faltando (opcional)";
+  const campoComentario = criar("label", "campo", "Comentário");
+  campoComentario.appendChild(comentario);
+
+  const revisor = criar("input");
+  revisor.type = "text";
+  revisor.maxLength = 80;
+  revisor.placeholder = "Ex.: Secretaria – Ana";
+  revisor.value = lerPreferencia("revisor-nome", "");
+  const campoRevisor = criar("label", "campo", "Quem está validando");
+  campoRevisor.appendChild(revisor);
+
+  salvar.addEventListener("click", async () => {
+    salvar.disabled = true;
+    salvar.textContent = "Salvando…";
+    gravarPreferencia("revisor-nome", revisor.value.trim());
+    try {
+      const { revisao } = await api("/admin/revisoes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          interacao_id: registro.id,
+          veredito: escolhido,
+          revisor: revisor.value.trim() || null,
+          comentario: comentario.value.trim() || null,
+        }),
+      });
+      registro.revisao = revisao;
+      avisar("Validação registrada.");
+      renderizarLogs();
+      carregarPainel();
+      abrirDetalhe(registro);
+    } catch (erro) {
+      if (tratarSessao(erro)) return;
+      avisar(erro.message, true);
+      salvar.disabled = false;
+      salvar.textContent = "Salvar validação";
+    }
+  });
+
+  const campos = criar("div", "validacao-campos");
+  campos.append(campoComentario, campoRevisor);
+  caixa.append(criar("p", "validacao-pergunta", "A resposta está correta segundo os documentos oficiais?"),
+    opcoes, campos, salvar);
+  return caixa;
+}
+
+async function abrirInteracao(id) {
+  let registro = estado.interacoes.find((r) => r.id === id);
+  if (!registro) {
+    await carregarLogs();
+    registro = estado.interacoes.find((r) => r.id === id);
+  }
+  if (registro) abrirDetalhe(registro);
+  else avisar("Conversa não encontrada entre as mais recentes.", true);
+}
+
+// ---------------------------------------------------------------- painel: dados
+const PERIODOS = {
+  hoje: "hoje", "7d": "últimos 7 dias", "30d": "últimos 30 dias", "90d": "últimos 90 dias", tudo: "todo o período",
+};
+const SERIES_DIAS = [
+  { chave: "respondidas", rotulo: "Respondidas", cor: "var(--serie-1)" },
+  { chave: "sem_resultado", rotulo: "Sem resposta nos documentos", cor: "var(--serie-2)" },
+  { chave: "modelo_indisponivel", rotulo: "Modelo indisponível", cor: "var(--serie-3)" },
+];
+
+function porcentagem(taxa) {
+  if (taxa === null || taxa === undefined || Number.isNaN(taxa)) return "—";
+  return `${(taxa * 100).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`;
+}
+
+function aplicarPeriodo() {
+  document.querySelectorAll(".periodo").forEach((botao) => {
+    botao.setAttribute("aria-checked", String(botao.dataset.periodo === estado.periodo));
+  });
+}
+
+async function carregarPainel() {
+  aplicarPeriodo();
+  const conteudo = $("#painel-conteudo");
+  conteudo.classList.add("recarregando");
+  $("#atualizar-painel").disabled = true;
+  try {
+    estado.painel = await api(`/admin/dashboard?periodo=${estado.periodo}`);
+    renderizarPainel();
+  } catch (erro) {
+    if (tratarSessao(erro)) return;
+    avisar(erro.message, true);
+  } finally {
+    conteudo.classList.remove("recarregando");
+    $("#atualizar-painel").disabled = false;
+  }
+}
+
+// ---------------------------------------------------------------- painel: indicadores
+function renderizarStatusModelo(d) {
+  const ok = d.modelo.disponivel;
+  const caixa = $("#status-modelo");
+  caixa.className = `status-modelo ${ok ? "status-ok" : "status-falha"}`;
+  const icone = criar("span", "status-icone", ok ? "✓" : "✕");
+  icone.setAttribute("aria-hidden", "true");
+  const texto = criar("div");
+  const linha = criar("div");
+  linha.append(
+    criar("strong", null, ok ? "Modelo de linguagem disponível" : "Modelo de linguagem indisponível"),
+    criar("span", "subtitulo", ` · ${d.modelo.nome} (${d.modelo.api === "ollama" ? "local, Ollama" : "API"})`),
+  );
+  const detalhes = [];
+  if (d.ultima_interacao) detalhes.push(`Última pergunta em ${formatarDataHora(d.ultima_interacao)}`);
+  detalhes.push(d.ultima_falha_modelo
+    ? `última falha do modelo em ${formatarDataHora(d.ultima_falha_modelo)}`
+    : "nenhuma falha do modelo no período");
+  texto.append(linha, criar("div", "subtitulo", detalhes.join(" · ")));
+  caixa.replaceChildren(icone, texto);
+}
+
+function renderizarIndicadores(d) {
+  const avaliadas = d.alunos.uteis + d.alunos.nao_uteis;
+  const validadas = d.validacao.correta + d.validacao.parcial + d.validacao.incorreta;
+  const indicadores = [
+    ["Perguntas", d.totais.perguntas.toLocaleString("pt-BR"),
+      `${plural(d.totais.interacoes, "interação", "interações")} · ${plural(d.totais.alunos, "aluno", "alunos")}`],
+    ["Taxa de resposta", porcentagem(d.desfechos.taxa_resposta),
+      `${d.desfechos.sem_resultado.toLocaleString("pt-BR")} sem resposta · ${d.desfechos.modelo_indisponivel.toLocaleString("pt-BR")} sem modelo`],
+    ["Aprovação dos alunos", porcentagem(d.alunos.taxa_util),
+      avaliadas ? `de ${plural(avaliadas, "avaliação", "avaliações")}` : "Nenhuma avaliação no período"],
+    ["Validadas como corretas", porcentagem(d.validacao.taxa_correta),
+      `${plural(validadas, "validada", "validadas")} · ${plural(d.validacao.pendentes, "pendente", "pendentes")}`],
+    ["Tempo mediano", d.tempo.mediano_ms === null ? "—" : formatarTempo(d.tempo.mediano_ms),
+      d.tempo.modelo_medio_ms === null ? "por pergunta" : `modelo: média de ${formatarTempo(d.tempo.modelo_medio_ms)}`],
+  ];
+  $("#painel-kpis").replaceChildren(...indicadores.map(([rotulo, valor, nota]) => {
+    const cartao = criar("div", "kpi");
+    cartao.append(criar("div", "kpi-rotulo", rotulo), criar("div", "kpi-valor", valor));
+    if (nota) cartao.appendChild(criar("div", "kpi-nota", nota));
+    return cartao;
+  }));
+}
+
+// Lista de medidores: nome, barra e número em cada linha, barras alinhadas, uma cor só.
+function listaMedidores(alvo, linhas, vazio) {
+  const total = linhas.reduce((soma, l) => soma + l.valor, 0);
+  if (!total) {
+    $(alvo).replaceChildren(criar("p", "vazio", vazio));
+    return;
+  }
+  const maior = Math.max(...linhas.map((l) => l.valor));
+  $(alvo).replaceChildren(...linhas.map((linha) => {
+    const item = criar("div", "medidor");
+    const trilho = criar("div", "medidor-trilho");
+    const barra = criar("span", "medidor-barra");
+    barra.style.width = linha.valor ? `${(linha.valor / maior) * 100}%` : "0";
+    trilho.appendChild(barra);
+    const numero = criar("span", "medidor-numero");
+    numero.append(criar("strong", null, linha.valor.toLocaleString("pt-BR")),
+      document.createTextNode(` · ${porcentagem(linha.valor / total)}`));
+    item.append(criar("span", "medidor-nome", linha.rotulo), trilho, numero);
+    item.title = `${linha.rotulo}: ${linha.valor.toLocaleString("pt-BR")} (${porcentagem(linha.valor / total)})`;
+    return item;
+  }));
+}
+
+function renderizarListas(d) {
+  const modos = Object.entries(d.por_modo || {})
+    .map(([modo, valor]) => ({ rotulo: (MODOS[modo] || { rotulo: modo }).rotulo, valor }))
+    .sort((a, b) => b.valor - a.valor);
+  listaMedidores("#grafico-modos", modos, "Nenhuma interação no período.");
+  listaMedidores("#medidores-alunos", [
+    { rotulo: "Útil", valor: d.alunos.uteis },
+    { rotulo: "Não útil", valor: d.alunos.nao_uteis },
+  ], "Nenhum aluno avaliou respostas no período.");
+  // Percentuais sobre as respostas já validadas, como o indicador do topo; as pendentes ficam à parte.
+  listaMedidores("#medidores-validacao", [
+    { rotulo: "Correta", valor: d.validacao.correta },
+    { rotulo: "Parcial", valor: d.validacao.parcial },
+    { rotulo: "Incorreta", valor: d.validacao.incorreta },
+  ], "Nenhuma resposta validada no período.");
+  if (d.validacao.pendentes) {
+    $("#medidores-validacao").appendChild(criar("p", "medidor-rodape",
+      `${plural(d.validacao.pendentes, "pergunta aguarda", "perguntas aguardam")} validação (lista abaixo).`));
+  }
+}
+
+function renderizarTabelasPainel(d) {
+  const revisar = $("#revisar-corpo");
+  if (!d.para_revisar.length) {
+    linhaEstado(revisar, 3, "Nenhuma resposta pendente de validação no período.");
+  } else {
+    revisar.replaceChildren(...d.para_revisar.map((item) => {
+      const tr = criar("tr", "linha-interacao");
+      tr.appendChild(criar("td", "col-data", formatarDataHora(item.data_hora)));
+      const pergunta = criar("td");
+      const abrir = criar("button", "abrir-detalhe", item.pergunta);
+      abrir.type = "button";
+      pergunta.appendChild(abrir);
+      tr.appendChild(pergunta);
+      tr.appendChild(criar("td", "col-motivo", item.motivo));
+      tr.addEventListener("click", () => abrirInteracao(item.id));
+      return tr;
+    }));
+  }
+  const semResposta = $("#sem-resposta-corpo");
+  if (!d.sem_resposta_frequentes.length) {
+    linhaEstado(semResposta, 3, "Nenhuma pergunta ficou sem resposta no período.");
+  } else {
+    semResposta.replaceChildren(...d.sem_resposta_frequentes.map((item) => {
+      const tr = criar("tr");
+      tr.append(criar("td", null, item.pergunta), criar("td", "num", item.vezes.toLocaleString("pt-BR")),
+        criar("td", "col-data", formatarDataHora(item.ultima)));
+      return tr;
+    }));
+  }
+}
+
+function renderizarPainel() {
+  const d = estado.painel;
+  const [data, hora] = formatarDataHora(d.gerado_em).split(" ");
+  const intervalo = d.periodo.inicio ? ` (desde ${formatarData(d.periodo.inicio)})` : "";
+  $("#painel-atualizado").textContent = `Atualizado em ${data} às ${hora} · ${PERIODOS[d.periodo.codigo]}${intervalo}`;
+  renderizarStatusModelo(d);
+  renderizarIndicadores(d);
+  renderizarListas(d);
+  renderizarTabelasPainel(d);
+  desenharGraficos();
+}
+
+// ---------------------------------------------------------------- painel: gráficos em SVG
+const SVG = "http://www.w3.org/2000/svg";
+
+function svg(tag, atributos = {}) {
+  const el = document.createElementNS(SVG, tag);
+  Object.entries(atributos).forEach(([nome, valor]) => el.setAttribute(nome, valor));
+  return el;
+}
+
+// Coluna com a ponta de dados arredondada (4px) e a base reta.
+function caminhoColuna(x, y, largura, altura, arredondar) {
+  const r = arredondar ? Math.min(4, largura / 2, altura) : 0;
+  return `M${x},${y + altura}V${y + r}Q${x},${y} ${x + r},${y}H${x + largura - r}Q${x + largura},${y} ${x + largura},${y + r}V${y + altura}Z`;
+}
+
+function escalaLimpa(maximo) {
+  if (maximo <= 4) return { topo: Math.max(maximo, 1), passo: 1 };
+  const bruto = maximo / 4;
+  const base = 10 ** Math.floor(Math.log10(bruto));
+  const passo = [1, 2, 5, 10].map((mult) => mult * base).find((p) => p >= bruto);
+  return { topo: Math.ceil(maximo / passo) * passo, passo };
+}
+
+function mostrarDica(evento, titulo, linhas) {
+  const dica = $("#dica");
+  const cabeca = criar("div", "dica-titulo", titulo);
+  const corpo = linhas.map(({ rotulo, valor, cor }) => {
+    const linha = criar("div", "dica-linha");
+    if (cor) {
+      const chave = criar("span", "dica-chave");
+      chave.style.background = cor;
+      linha.appendChild(chave);
+    }
+    linha.append(criar("strong", null, valor), criar("span", null, rotulo));
+    return linha;
+  });
+  dica.replaceChildren(cabeca, ...corpo);
+  dica.hidden = false;
+  const alvo = evento.currentTarget.getBoundingClientRect();
+  const x = evento.clientX || alvo.left + alvo.width / 2;
+  const y = evento.clientY || alvo.top;
+  dica.style.left = `${Math.min(window.innerWidth - dica.offsetWidth - 8, Math.max(8, x + 14))}px`;
+  dica.style.top = `${Math.max(8, y - dica.offsetHeight - 12)}px`;
+}
+
+function esconderDica() {
+  $("#dica").hidden = true;
+}
+
+// Colunas (empilhadas quando há mais de uma série), uma por categoria do eixo X.
+function graficoColunas(alvo, categorias, series, opcoes) {
+  const caixa = $(alvo);
+  if (caixa.dataset.tabela === "1") {
+    desenharTabela(caixa, categorias, series, opcoes);
+    return;
+  }
+  const largura = Math.max(caixa.clientWidth, 280);
+  const altura = 220;
+  const m = { topo: 16, direita: 8, base: 26, esquerda: 34 };
+  const areaL = largura - m.esquerda - m.direita;
+  const areaA = altura - m.topo - m.base;
+  const totais = categorias.map((_, i) => series.reduce((soma, s) => soma + s.valores[i], 0));
+  const maiorTotal = Math.max(...totais, 0);
+  const { topo, passo } = escalaLimpa(maiorTotal);
+  const banda = areaL / categorias.length;
+  const coluna = Math.max(2, Math.min(24, banda * 0.72));
+  const y = (v) => m.topo + areaA - (v / topo) * areaA;
+
+  const raiz = svg("svg", { viewBox: `0 0 ${largura} ${altura}`, width: largura, height: altura, role: "img",
+    "aria-label": opcoes.descricao });
+  for (let v = 0; v <= topo; v += passo) {
+    raiz.appendChild(svg("line", { x1: m.esquerda, x2: largura - m.direita, y1: y(v), y2: y(v), class: "grade-linha" }));
+    const rotulo = svg("text", { x: m.esquerda - 6, y: y(v) + 4, class: "eixo-texto", "text-anchor": "end" });
+    rotulo.textContent = v.toLocaleString("pt-BR");
+    raiz.appendChild(rotulo);
+  }
+  const salto = Math.ceil(categorias.length / Math.max(1, Math.floor(areaL / 46)));
+  let rotulouMaior = false;
+  categorias.forEach((categoria, i) => {
+    const xBanda = m.esquerda + i * banda;
+    const x = xBanda + (banda - coluna) / 2;
+    const grupo = svg("g", { class: "coluna", tabindex: "0" });
+    grupo.appendChild(svg("rect", { x: xBanda, y: m.topo, width: banda, height: areaA, class: "coluna-alvo" }));
+    let acumulado = 0;
+    const visiveis = series.filter((s) => s.valores[i] > 0);
+    visiveis.forEach((serie, k) => {
+      const valor = serie.valores[i];
+      const yTopo = y(acumulado + valor);
+      const vao = k > 0 ? 2 : 0; // 2px de superfície entre segmentos empilhados
+      const h = Math.max(0, y(acumulado) - yTopo - vao);
+      grupo.appendChild(svg("path", { d: caminhoColuna(x, yTopo, coluna, h, k === visiveis.length - 1), fill: serie.cor }));
+      acumulado += valor;
+    });
+    if (i % salto === 0) {
+      const rotulo = svg("text", { x: xBanda + banda / 2, y: altura - 8, class: "eixo-texto", "text-anchor": "middle" });
+      rotulo.textContent = opcoes.rotuloX(categoria);
+      raiz.appendChild(rotulo);
+    }
+    if (opcoes.rotularMaior && !rotulouMaior && totais[i] === maiorTotal && maiorTotal > 0) {
+      rotulouMaior = true;
+      const valor = svg("text", { x: x + coluna / 2, y: y(totais[i]) - 4, class: "valor-texto", "text-anchor": "middle" });
+      valor.textContent = totais[i].toLocaleString("pt-BR");
+      raiz.appendChild(valor);
+    }
+    const linhas = series.map((s) => ({
+      rotulo: s.rotulo, valor: s.valores[i].toLocaleString("pt-BR"), cor: series.length > 1 ? s.cor : null,
+    }));
+    const titulo = opcoes.tituloDica(categoria, totais[i]);
+    ["pointermove", "focus"].forEach((tipo) => grupo.addEventListener(tipo, (ev) => mostrarDica(ev, titulo, linhas)));
+    ["pointerleave", "blur"].forEach((tipo) => grupo.addEventListener(tipo, esconderDica));
+    raiz.appendChild(grupo);
+  });
+  caixa.replaceChildren(raiz);
+}
+
+function desenharTabela(caixa, categorias, series, opcoes) {
+  const tabela = criar("table", "tabela tabela-dados");
+  const cabeca = criar("tr");
+  cabeca.appendChild(criar("th", null, opcoes.rotuloColuna));
+  series.forEach((s) => cabeca.appendChild(criar("th", "num", s.rotulo)));
+  const thead = criar("thead");
+  thead.appendChild(cabeca);
+  const tbody = criar("tbody");
+  categorias.forEach((categoria, i) => {
+    const tr = criar("tr");
+    tr.appendChild(criar("td", null, opcoes.rotuloTabela(categoria)));
+    series.forEach((s) => tr.appendChild(criar("td", "num", s.valores[i].toLocaleString("pt-BR"))));
+    tbody.appendChild(tr);
+  });
+  tabela.append(thead, tbody);
+  const rolagem = criar("div", "tabela-rolagem");
+  rolagem.appendChild(tabela);
+  caixa.replaceChildren(rolagem);
+}
+
+function desenharGraficos() {
+  const d = estado.painel;
+  if (!d || $("#secao-painel").hidden) return;
+  const dias = d.por_dia.map((dia) => dia.data);
+  const series = SERIES_DIAS.map((s) => ({ ...s, valores: d.por_dia.map((dia) => dia[s.chave]) }));
+  $("#legenda-dias").replaceChildren(...series.map((s) => {
+    const item = criar("span", "legenda-item");
+    const amostra = criar("span", "legenda-amostra");
+    amostra.style.background = s.cor;
+    const total = s.valores.reduce((soma, v) => soma + v, 0);
+    item.append(amostra, document.createTextNode(`${s.rotulo} `), criar("strong", null, total.toLocaleString("pt-BR")));
+    return item;
+  }));
+  if (!dias.length) {
+    $("#grafico-dias").replaceChildren(criar("p", "vazio", "Nenhuma pergunta no período."));
+  } else {
+    graficoColunas("#grafico-dias", dias, series, {
+      descricao: "Perguntas por dia, por desfecho",
+      rotuloX: (data) => formatarData(data).slice(0, 5),
+      rotuloTabela: formatarData,
+      rotuloColuna: "Dia",
+      tituloDica: (data, total) => `${formatarData(data)} · ${plural(total, "pergunta", "perguntas")}`,
+    });
+  }
+  const horas = [...Array(24).keys()];
+  const doisDigitos = (h) => String(h).padStart(2, "0");
+  if (!d.por_hora.some((v) => v > 0)) {
+    $("#grafico-horas").replaceChildren(criar("p", "vazio", "Nenhuma pergunta no período."));
+  } else {
+    graficoColunas("#grafico-horas", horas, [{ rotulo: "Perguntas", cor: "var(--serie-1)", valores: d.por_hora }], {
+      descricao: "Perguntas por hora do dia",
+      rotuloX: (h) => `${h}h`,
+      rotuloTabela: (h) => `${doisDigitos(h)}h às ${doisDigitos(h)}h59`,
+      rotuloColuna: "Hora",
+      rotularMaior: true,
+      tituloDica: (h, total) => `${doisDigitos(h)}h às ${doisDigitos(h)}h59 · ${plural(total, "pergunta", "perguntas")}`,
+    });
+  }
+}
+
+function alternarTabela(botao) {
+  const caixa = document.getElementById(botao.dataset.alvo);
+  const tabela = caixa.dataset.tabela !== "1";
+  caixa.dataset.tabela = tabela ? "1" : "";
+  botao.textContent = tabela ? "Ver gráfico" : "Ver tabela";
+  desenharGraficos();
+}
+
+function ligarPainel() {
+  document.querySelectorAll(".periodo").forEach((botao) => {
+    botao.addEventListener("click", () => {
+      estado.periodo = botao.dataset.periodo;
+      gravarPreferencia("painel-periodo", estado.periodo);
+      carregarPainel();
+    });
+  });
+  document.querySelectorAll(".alternar-tabela").forEach((botao) => {
+    botao.addEventListener("click", () => alternarTabela(botao));
+  });
+  $("#atualizar-painel").addEventListener("click", carregarPainel);
+  window.addEventListener("scroll", esconderDica, { passive: true, capture: true });
+  let redimensionar;
+  window.addEventListener("resize", () => {
+    window.clearTimeout(redimensionar);
+    redimensionar = window.setTimeout(desenharGraficos, 150);
+  });
+  // Atualiza sozinho a cada minuto enquanto o painel está aberto e visível.
+  estado.temporizador = window.setInterval(() => {
+    if (!$("#painel").hidden && secaoAtual() === "painel" && !document.hidden) carregarPainel();
+  }, 60000);
 }
 
 // ---------------------------------------------------------------- documentos
@@ -794,8 +1310,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   window.addEventListener("hashchange", aplicarSecao);
+  ligarPainel();
 
-  ["#filtro-texto", "#filtro-modo", "#filtro-avaliacao"].forEach((seletor) => {
+  ["#filtro-texto", "#filtro-modo", "#filtro-avaliacao", "#filtro-validacao"].forEach((seletor) => {
     $(seletor).addEventListener("input", () => {
       estado.pagina = 1;
       renderizarLogs();

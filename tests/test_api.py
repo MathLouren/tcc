@@ -377,3 +377,44 @@ def test_admin_relatorio_conteudo_download_e_teste_de_busca(cliente, ambiente, m
 
     cliente.delete("/admin/documentos/manual_novo.md", headers=ADMIN)
     assert not (ambiente.indice_dir / "blocos" / "manual_novo.jsonl").exists()
+
+
+# ---------------------------------------------------------------- dashboard e validação humana
+def test_dashboard_exige_autenticacao(cliente):
+    assert cliente.get("/admin/dashboard").status_code == 401
+    assert cliente.post("/admin/revisoes", json={"interacao_id": "x", "veredito": "correta"}).status_code == 401
+
+
+def test_dashboard_resume_respostas_avaliacoes_e_modelo(cliente):
+    interacao = perguntar(cliente)
+    cliente.post("/feedback", json={"interacao_id": interacao["id"], "util": False})
+    dados = cliente.get("/admin/dashboard?periodo=7d", headers=ADMIN).json()
+    assert dados["totais"]["perguntas"] == 1
+    assert dados["alunos"]["nao_uteis"] == 1
+    assert dados["modelo"]["disponivel"] is True
+    assert dados["para_revisar"][0]["id"] == interacao["id"]
+    assert len(dados["por_dia"]) == 7 and len(dados["por_hora"]) == 24
+
+
+def test_dashboard_rejeita_periodo_invalido(cliente):
+    assert cliente.get("/admin/dashboard?periodo=ano", headers=ADMIN).status_code == 422
+
+
+def test_validacao_humana_e_registrada_e_aparece_nos_logs_e_no_dashboard(cliente):
+    interacao = perguntar(cliente)
+    r = cliente.post("/admin/revisoes", headers=ADMIN, json={
+        "interacao_id": interacao["id"], "veredito": "parcial", "revisor": "Secretaria", "comentario": "Faltou o prazo.",
+    })
+    assert r.status_code == 200 and r.json()["revisao"]["revisor"] == "Secretaria"
+    log = cliente.get("/admin/logs", headers=ADMIN).json()["interacoes"][0]
+    assert log["revisao"]["veredito"] == "parcial"
+    validacao = cliente.get("/admin/dashboard", headers=ADMIN).json()["validacao"]
+    assert validacao["parcial"] == 1 and validacao["pendentes"] == 0 and validacao["escore"] == 0.5
+
+
+@pytest.mark.parametrize("corpo, status", [
+    ({"interacao_id": "inexistente", "veredito": "correta"}, 404),
+    ({"interacao_id": "x", "veredito": "talvez"}, 422),
+])
+def test_validacao_humana_rejeita_interacao_ou_veredito_invalido(cliente, corpo, status):
+    assert cliente.post("/admin/revisoes", headers=ADMIN, json=corpo).status_code == status
